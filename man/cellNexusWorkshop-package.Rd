@@ -22,7 +22,8 @@ Useful links:
 Authors:
 \itemize{
   \item Mengyuan Shen \email{shen.m@wehi.edu.au} (\href{https://orcid.org/0009-0008-0057-8239}{ORCID})
-  \item Stefano Mangiola \email{mangiolastefano@gmail.com} (\href{https://orcid.org/0000-0001-7474-836X}{ORCID})
+  \item Yingnan Gao \email{yingnan.gao@adelaide.edu.au}
+  \item Stefano Mangiola \email{stefano.mangiola@adelaide.edu.au} (\href{https://orcid.org/0000-0001-7474-836X}{ORCID})
 }
 
 }

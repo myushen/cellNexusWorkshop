@@ -1,10 +1,9 @@
 ---
 title: "2. Explore and visualise"
-author:
-  - Mengyuan Shen, Walter and Eliza Hall Institute^[<shen.m at wehi.edu.au>]
-  - Stefano Mangiola^[<mangiolastefano at gmail.com>]
 output: rmarkdown::html_vignette
 bibliography: cellNexusWorkshop.bib
+suppress-bibliography: true
+link-citations: false
 vignette: >
   %\VignetteIndexEntry{2. Explore and visualise}
   %\VignetteEngine{knitr::rmarkdown}
@@ -43,7 +42,7 @@ if (!exists("obs_lung")) {
 
 ## Download a SingleCellExperiment
 
-`get_single_cell_experiment()` reads the count matrices for the cells in a metadata table and returns one `SingleCellExperiment`. The workshop cap keeps the download inside a session. The chapter analysis uses 12,000 cells. Set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` before this chunk to match it. Allow several minutes, and about 32 GB of RAM for the larger cap.
+`get_single_cell_experiment()` reads the count matrices for the cells in a metadata table and returns one `SingleCellExperiment`. The workshop cap keeps the download inside a session. The example figures on this site use 12,000 cells. Set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` before this chunk to match them. Allow several minutes, and about 32 GB of RAM for the larger cap.
 
 Cells are subsampled within sample, and the number of samples is capped, so a few large libraries do not dominate the highly variable genes.
 
@@ -126,7 +125,7 @@ sce_qc |>
   labs(colour = "CD45 (PTPRC)")
 ```
 
-```{r cd45-figure, echo=FALSE, eval=TRUE, fig.cap="Reference Harmony UMAP from the chapter, coloured by CD45. Immune cells occupy the high-CD45 region."}
+```{r cd45-figure, echo=FALSE, eval=TRUE, fig.cap="Example Harmony UMAP, coloured by CD45. Immune cells occupy the high-CD45 region."}
 knitr::include_graphics("images/cd45-umap.png")
 ```
 
@@ -143,7 +142,38 @@ sce_qc |>
 
 > **Exercise 4.** Colour the same UMAP by `dataset_id`. After Harmony, study identity should be mixed within a cell-type region. Islands that follow study boundaries are under-correction. Harmony adjusts the embedding used for the picture. It does not adjust the counts, so the models in the next two articles still include `dataset_id`.
 
+<details>
+<summary>Solution</summary>
+
+```r
+sce_qc |>
+  ggplot2::ggplot(ggplot2::aes(UMAP1, UMAP2, colour = dataset_id)) +
+  ggplot2::geom_point(size = 0.3, alpha = 0.6) +
+  ggplot2::coord_equal() +
+  ggplot2::theme_bw()
+```
+
+Mixing of colours inside a cell-type region is the pattern you want after Harmony. A region painted by a single study is under-correction. The expression model still includes `dataset_id`, because the counts were not adjusted.
+
+</details>
+
 > **Exercise 5.** Using `sce_qc`, count cells per `cell_type_unified_ensemble`. Which of `immune_cell_types()` are missing from this subsample, and what does that imply for a composition estimate built from these cells alone?
+
+<details>
+<summary>Solution</summary>
+
+```r
+library(cellNexusWorkshop)
+
+sce_qc |>
+  dplyr::count(cell_type_unified_ensemble, sort = TRUE)
+
+setdiff(immune_cell_types(), unique(sce_qc$cell_type_unified_ensemble))
+```
+
+Labels missing from this subsample are absent because of the cap, not because they are absent from `obs_lung`. Composition in the next article is fit on `obs_lung`, which keeps every cell of every retained sample. Fitting `sccomp` on `sce_qc` would estimate the subsample.
+
+</details>
 
 ## The same cells as a Seurat object
 
@@ -162,7 +192,7 @@ seurat_demo <- one_study |>
 seurat_demo
 ```
 
-`tidyseurat` gives that object the same tibble interface you just used on the SingleCellExperiment. The rest of the workshop stays with SingleCellExperiment, because the pseudobulk tools speak that language. Either container is a valid cellNexus download.
+`tidyseurat` gives that object the same tibble interface you just used on the SingleCellExperiment. The rest of the workshop stays with SingleCellExperiment, because the pseudobulk tools speak that language.
 
 ```{r, include=FALSE}
 rm(hvgs_qc, sampled_qc, samples_qc)

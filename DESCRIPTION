@@ -6,8 +6,11 @@ Authors@R: c(
            email = "shen.m@wehi.edu.au",
            role = c("aut", "cre"),
            comment = c(ORCID = "0009-0008-0057-8239")),
+    person("Yingnan", "Gao",
+           email = "yingnan.gao@adelaide.edu.au",
+           role = "aut"),
     person("Stefano", "Mangiola",
-           email = "mangiolastefano@gmail.com",
+           email = "stefano.mangiola@adelaide.edu.au",
            role = "aut",
            comment = c(ORCID = "0000-0001-7474-836X"))
     )

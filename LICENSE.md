@@ -1,6 +1,6 @@
 # MIT License
 
-Copyright (c) 2026 Mengyuan Shen and Stefano Mangiola
+Copyright (c) 2026 Mengyuan Shen, Yingnan Gao, and Stefano Mangiola
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

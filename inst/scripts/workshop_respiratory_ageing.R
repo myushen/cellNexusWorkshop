@@ -10,7 +10,7 @@
 # Workshop pace (defaults):
 #   CELLNEXUS_WORKSHOP_MAX_CELLS=4000
 #   CELLNEXUS_WORKSHOP_INFERENCE=pathfinder
-# Chapter settings:
+# Larger example run:
 #   CELLNEXUS_WORKSHOP_MAX_CELLS=12000
 #   CELLNEXUS_WORKSHOP_INFERENCE=hmc
 

@@ -1,44 +1,33 @@
 # cellNexusWorkshop
 
+<p style="text-align: left;">
+<img src="man/figures/cellnexus_logo.png" alt="cellNexus logo" style="height: 100px; width: auto;"/>
+<img src="man/figures/sccomp_logo.png" alt="sccomp logo" style="height: 100px; width: auto;"/>
+</p>
+
 Hands-on BiocAsia workshop. From a curated Human Cell Atlas query to donor-level composition and expression analysis, in R.
 
-<p>
-The page to follow during the session is this site. Read this page, then the articles in order.
-</p>
+This is the page to follow during the session. Read this page, then the articles in order. The session is open to all levels of R experience. Each article shows the commands to run.
 
 ## Instructor names and contact information
 
-* Mengyuan Shen <shen.m at wehi.edu.au>
-* Stefano Mangiola <mangiolastefano at gmail.com>
+* Mengyuan Shen <shen.m@wehi.edu.au>
+* Yingnan Gao <yingnan.gao@adelaide.edu.au>
+* Stefano Mangiola <stefano.mangiola@adelaide.edu.au>
 
 ## Syllabus
 
 Follow these articles in one R session.
 
-1. [Query the atlas](articles/query_the_atlas.html)
-2. [Explore and visualise](articles/explore_and_visualise.html)
-3. [Compositional analysis](articles/compositional_analysis.html)
-4. [Gene expression](articles/gene_expression.html)
-5. [Solutions](articles/solutions.html)
+- [Query the atlas](articles/query_the_atlas.html)
+- [Explore and visualise](articles/explore_and_visualise.html)
+- [Compositional analysis](articles/compositional_analysis.html)
+- [Gene expression](articles/gene_expression.html)
+- [Solutions](articles/solutions.html)
 
-The long-form protocol behind the case study, with the design notes for each step, is [book_chapter_Mangiola_et_al_cellNexus](https://github.com/stemangiola/book_chapter_Mangiola_et_al_cellNexus). This workshop follows the R stream of that chapter.
+## Package installation
 
-### Session outline
-
-| Block | Minutes | Page |
-| --- | --- | --- |
-| Welcome and environment | 15 | this page |
-| Query, quality control, cohort balance | 40 | Query the atlas |
-| SingleCellExperiment, Harmony, UMAP | 35 | Explore and visualise |
-| Immune composition with sccomp | 40 | Compositional analysis |
-| Epithelial pseudobulk and DESeq2 | 40 | Gene expression |
-| Close | 10 | the installed workflow script |
-
-The signature-scoring section at the end of article 4 is the piece to skip if the room is short of time.
-
-## Workshop package installation
-
-The session machines should already have this stack. The commands below are for installing it afterwards, or for preparing a machine. The workshop targets R 4.5 or later. `cellNexus` is installed from GitHub. Install CmdStan before the first `sccomp` fit so the session does not stop on a compiler.
+The commands below are for preparing a machine. The workshop targets R 4.5 or later. `cellNexus` is installed from GitHub. Install CmdStan before the first `sccomp` fit so the session does not stop on a compiler.
 
 ```r
 install.packages("BiocManager")
@@ -82,30 +71,24 @@ file.edit(system.file(
 
 ## Workshop description
 
-The Human Cell Atlas and CELLxGENE now host hundreds of millions of harmonised single cells spanning healthy and diseased tissues. This data availability created enormous opportunities to unveil biological mechanisms at high resolution across cell types, tissues and population niches. However, identifying a collection of atlases is only a small part of the effort. Making large-scale data analysis ready requires weeks or months of work.
-
-This hands-on workshop introduces cellNexus, an API for R and Python that delivers quality control, annotation, and analysis layers for CELLxGENE-scale single-cell data. It allows you to conveniently create ready-to-use SingleCellExperiment and/or Seurat objects of arbitrary selections of cells. Beyond expression data, cellNexus also standardises cell type labels across studies through multi-reference consensus annotation and enriches samples with standardised metadata, including age, ethnicity, and tissue groups. This enhanced metadata supports large-scale modelling, for example of cell-type composition patterns. For large-scale compositional analyses of single-cell data, we introduce sccomp, a robust Bayesian framework for detecting differences in cell type composition and variability between conditions.
-
-In our hands-on session, participants will learn to use cellNexus to query and download a curated subset of atlas data by tissue, cell type, or disease status, then explore and visualise the resulting data using the tidyomics ecosystem. They will subsequently perform gene expression analyses and use sccomp to perform a compositional analysis. By the end of the session, participants will have made a reusable R workflow that takes them from the Human Cell Atlas to analyses.
-
-The live session is R. The same case study has a Python stream in the chapter repository linked above.
+In this session you will use cellNexus to query and download a curated subset of atlas data by tissue, cell type, or disease status, then explore and visualise the data with the tidyomics packages. You will then run a gene-expression analysis and use sccomp for a compositional analysis. By the end of the session you will have an R script that takes you from the Human Cell Atlas to these analyses.
 
 ### Pre-requisites
 
-* Basic familiarity with single-cell RNA-seq analysis
-* Basic familiarity with the tidyverse
+* No prior R experience is required. The articles show each command.
 * An R 4.5 session with the packages above, and CmdStan installed
 
 ### Workshop participation
 
-The workshop is a half-day hands-on session of demos, exercises, and questions. Run the article code in order, in one R session. Exercises are marked in the articles. Worked code is on the Solutions page.
+The workshop format is a 90 minute session consisting of hands-on demos, exercises and questions. Run the article code in order, in one R session. Each exercise has a solution hidden underneath it. The [Solutions](articles/solutions.html) page collects the same answers.
 
-The website shows the code you run. It does not execute the atlas query. Reference figures are taken from the full chapter analysis (12,000-cell cap, Hamiltonian Monte Carlo). The session defaults are a 4,000-cell cap and `sccomp` Pathfinder, so your figures will differ in detail. Set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` and `CELLNEXUS_WORKSHOP_INFERENCE=hmc` to match the chapter.
+
+The website shows the code. Run it in R to see your own results. The figures already on the site are examples from a larger download (12,000 cells, and a slower `sccomp` fit). During the session the download is capped at 4,000 cells and `sccomp` uses Pathfinder, which finishes sooner, so your figures can look a little different. To match the example figures, set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` and `CELLNEXUS_WORKSHOP_INFERENCE=hmc` before you start.
 
 ### _R_ / _Bioconductor_ packages used
 
-* cellNexus
-* sccomp
+* [cellNexus](https://www.biorxiv.org/content/10.64898/2026.04.14.718336v3)
+* [sccomp](https://www.pnas.org/doi/10.1073/pnas.2203828120)
 * tidySingleCellExperiment, tidySummarizedExperiment, tidybulk, tidyseurat
 * scater, scran, scrapper, bluster, harmony
 * DESeq2, org.Hs.eg.db, singscore
@@ -131,7 +114,17 @@ Participants leave with a script that defines a cohort from cellNexus metadata, 
 
 * The molecular technology of single-cell sequencing
 * How to train a cell-type classifier
-* The Python interface, which is in the chapter repository
+* The Python interface
+
+## References
+
+* Shen et al. (2026). cellNexus: quality control, annotation, aggregation and analytical layers for the Human Cell Atlas data. *bioRxiv*. <https://www.biorxiv.org/content/10.64898/2026.04.14.718336v3>
+* Mangiola et al. (2023). sccomp: robust differential composition and variability analysis for single-cell data. *Proceedings of the National Academy of Sciences*. <https://www.pnas.org/doi/10.1073/pnas.2203828120>
+* Squair et al. (2021). Confronting false discoveries in single-cell differential expression. *Nature Communications* 12:5692. <https://doi.org/10.1038/s41467-021-25960-2>
+* Lun, McCarthy, and Marioni (2016). A step-by-step workflow for low-level analysis of single-cell RNA-seq data with Bioconductor. *F1000Research* 5:2122. <https://doi.org/10.12688/f1000research.9501.2>
+* Korsunsky et al. (2019). Fast, sensitive and accurate integration of single-cell data with Harmony. *Nature Methods* 16:1289–1296. <https://doi.org/10.1038/s41592-019-0619-0>
+* Love, Huber, and Anders (2014). Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. *Genome Biology* 15:550. <https://doi.org/10.1186/s13059-014-0550-8>
+* Foroutan et al. (2018). Single sample scoring of molecular phenotypes. *BMC Bioinformatics* 19:404. <https://doi.org/10.1186/s12859-018-2435-4>
 
 ## Publish this site
 

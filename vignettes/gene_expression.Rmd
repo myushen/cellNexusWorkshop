@@ -1,10 +1,9 @@
 ---
 title: "4. Gene expression"
-author:
-  - Mengyuan Shen, Walter and Eliza Hall Institute^[<shen.m at wehi.edu.au>]
-  - Stefano Mangiola^[<mangiolastefano at gmail.com>]
 output: rmarkdown::html_vignette
 bibliography: cellNexusWorkshop.bib
+suppress-bibliography: true
+link-citations: false
 vignette: >
   %\VignetteIndexEntry{4. Gene expression}
   %\VignetteEngine{knitr::rmarkdown}
@@ -64,7 +63,7 @@ if (!exists("obs_lung")) {
 
 The broad label `epithelial` mixes ciliated, secretory, basal, and alveolar states. We integrate cells, cut the embedding into six clusters, and test age inside the cluster that can support the design.
 
-The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS` (default 4000). The chapter uses 12000. Harmony here is for clustering and the UMAP. The counts still carry study effects, and the model below still includes `dataset_id`.
+The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS` (default 4000). The example figures use 12000 cells. Harmony here is for clustering and the UMAP. The counts still carry study effects, and the model below still includes `dataset_id`.
 
 ```{r}
 epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "4000"))
@@ -114,11 +113,11 @@ sce_epi |>
   theme_bw()
 ```
 
-```{r epi-figure, echo=FALSE, eval=TRUE, fig.cap="Reference Harmony UMAP of epithelial cells from the chapter, coloured by the six k-means clusters."}
+```{r epi-figure, echo=FALSE, eval=TRUE, fig.cap="Example Harmony UMAP of epithelial cells, coloured by the six k-means clusters."}
 knitr::include_graphics("images/epithelial-umap.png")
 ```
 
-k-means labels are arbitrary. `E1` in your session is not `E1` in the chapter figure. The next section chooses the cluster from a screen, which you report alongside the label.
+k-means labels are arbitrary. `E1` in your session is not `E1` in the example figure. The next section chooses the cluster from a screen, which you report alongside the label.
 
 ## Aggregate sample-by-cluster pseudobulk
 
@@ -151,7 +150,7 @@ Confirm that `ncells` is the size of the aggregation group. Row sums of the coun
 
 ## Choose a cluster and fit the age model
 
-`select_de_cluster()` keeps clusters in which both age classes are represented and the design can separate age from study. It prefers the cluster supported by the most studies that contribute both age classes. The chapter thresholds are 150 cells and 5 samples in each class. A 4000-cell workshop cap may need the slightly lower thresholds below. If the function stops, read the printed screen and lower `min_samples_per_class`, or raise `CELLNEXUS_WORKSHOP_MAX_CELLS` and rebuild `pb_se`.
+`select_de_cluster()` keeps clusters in which both age classes are represented and the design can separate age from study. It prefers the cluster supported by the most studies that contribute both age classes. The default screen asks for 150 cells and 5 samples in each class. A 4000-cell cap may need the slightly lower thresholds below. If the function stops, read the printed screen and lower `min_samples_per_class`, or raise `CELLNEXUS_WORKSHOP_MAX_CELLS` and rebuild `pb_se`.
 
 ```{r}
 de_design <- ~ age_binary + log_cell_count + dataset_id
@@ -170,6 +169,18 @@ epi_cluster_screen$screen
 ```
 
 > **Exercise 8.** From `epi_cluster_screen$screen`, which cluster was chosen? How many studies in that cluster contribute both age classes (`n_datasets_spanning_age`)? Quote the screen table with the result. The label alone is not reproducible.
+
+<details>
+<summary>Solution</summary>
+
+```r
+epi_cluster_de_top
+epi_cluster_screen$screen
+```
+
+The chosen row is the first row of the screen after eligible clusters are sorted by `n_datasets_spanning_age`, then by the number of pseudobulk profiles. Quote `n_datasets_spanning_age` for that row. A value of 1 means the age term rests on a single study.
+
+</details>
 
 The contrast is old versus young: positive log fold changes are higher in donors over 50. DESeq2 tests against a log2 fold change of 1, so the p-value asks whether the change exceeds a doubling. Say that when you report the p-values. `sfType = "poscounts"` estimates size factors on sparse pseudobulk, where the default median-of-ratios estimator can find no gene detected in every profile.
 
@@ -263,11 +274,18 @@ ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
   )
 ```
 
-```{r marker-figure, echo=FALSE, eval=TRUE, fig.cap="Reference marker boxplots from the chapter. Each point is a donor-level pseudobulk profile in the cluster the screen selected. Abundance is log1p of the batch-adjusted count."}
+```{r marker-figure, echo=FALSE, eval=TRUE, fig.cap="Example marker boxplots. Each point is a donor-level pseudobulk profile in the cluster the screen selected. Abundance is log1p of the batch-adjusted count."}
 knitr::include_graphics("images/marker-boxplot.png")
 ```
 
 > **Exercise 9.** In `de_contrast`, which age class is the numerator? Check one gene in `signature_up` against its boxplot and confirm the direction matches.
+
+<details>
+<summary>Solution</summary>
+
+`c("age_binary", "old", "young")` tests old against young. Positive `log2FoldChange` means higher abundance in donors over 50. The boxplot for a gene in `signature_up` should sit higher in the `50-79` bin. If it sits lower, the factor levels and the contrast disagree.
+
+</details>
 
 ## Score the signature on single cells
 

@@ -1,8 +1,5 @@
 ---
 title: "Solutions"
-author:
-  - Mengyuan Shen, Walter and Eliza Hall Institute^[<shen.m at wehi.edu.au>]
-  - Stefano Mangiola^[<mangiolastefano at gmail.com>]
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Solutions}
@@ -13,6 +10,8 @@ vignette: >
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
+
+The same answers are hidden under each exercise. This page collects them in one place.
 
 Run these in the session that produced `obs_lung`, `sce_qc`, `sccomp_res`, and `epi_cluster_screen`. Counts depend on the atlas release and on the cell cap, so the answers are the tables these expressions print.
 

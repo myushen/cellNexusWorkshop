@@ -1,10 +1,9 @@
 ---
 title: "1. Query the atlas"
-author:
-  - Mengyuan Shen, Walter and Eliza Hall Institute^[<shen.m at wehi.edu.au>]
-  - Stefano Mangiola^[<mangiolastefano at gmail.com>]
 output: rmarkdown::html_vignette
 bibliography: cellNexusWorkshop.bib
+suppress-bibliography: true
+link-citations: false
 vignette: >
   %\VignetteIndexEntry{1. Query the atlas}
   %\VignetteEngine{knitr::rmarkdown}
@@ -15,9 +14,13 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
 ```
 
-This page is the script for the first block. Code is executed in your R session, in order. The figures on this site are the reference result from the full chapter analysis, so your workshop run can differ in detail when you use a smaller download.
+This page is the script for the first block. Run the code in your R session, in order. The figures on this site come from a larger example run, so your own plots can differ when you use the smaller download used in the session.
 
-The full protocol, including the notes behind each step, is the respiratory ageing chapter: [stemangiola/book_chapter_Mangiola_et_al_cellNexus](https://github.com/stemangiola/book_chapter_Mangiola_et_al_cellNexus).
+This article takes Human Cell Atlas data from CELLxGENE. Each study there is a table of measurements, with one row per cell. cellNexus has already spent a large amount of work making those studies usable together. It creates a sample id for each donor with a set of rules, because the original studies do not share one identifier for a person. It prepares each sample and checks data quality. It adds three cell-type labels with SingleR, using the Blueprint, Monaco, and Azimuth references. A harmonisation step then combines those three labels into one unified cell-type label for every cell. The diagram is the detail of that preprocessing, starting from the original CELLxGENE data.
+
+```{r abstract-figure, echo=FALSE, eval=TRUE, out.width="420", fig.align="left"}
+knitr::include_graphics("images/abstract.png")
+```
 
 ## Setup
 
@@ -29,7 +32,7 @@ library(patchwork)
 library(cellNexusWorkshop)
 ```
 
-`get_metadata()` returns a lazy DuckDB table. Filters stay in the query until something collects the rows, which is what makes an atlas of this size practical to subset [@shen2026cellnexus].
+`get_metadata()` returns a lazy DuckDB table. Filters stay in the query until something collects the rows, which is what makes an atlas of this size practical to subset.
 
 If `get_metadata()` fails with a parser error that mentions your cache path, call it with `cache_directory = path.expand("~")`.
 
@@ -40,7 +43,17 @@ metadata <- get_metadata() |>
 metadata
 ```
 
-`keep_quality_cells()` applies one gate to every study: empty droplets, viability, doublet class, and a minimum number of detected features. Study-specific thresholds are a common way to manufacture a batch effect.
+`keep_quality_cells()` applies one gate to every sample. Three kinds of rows are not usable cells, and leaving them in changes every later result.
+
+* An **empty droplet** is liquid captured with almost no cell in it. It still produces a few gene measurements, mostly background. Counting it as a cell inflates the number of cells and adds noise.
+* A **dead cell** has broken open. Much of what you then measure comes from the mitochondria, the parts of the cell that make energy, rather than from the genes that say what kind of cell it was.
+* A **doublet** is two cells captured together. Their measurements are mixed, so the row can look like a cell type that does not exist.
+
+```{r quality-control-figure, echo=FALSE, eval=TRUE, out.width="100%", fig.align="left"}
+knitr::include_graphics("images/quality-control.png")
+```
+
+The same checks are computed for each sample. Detailed information on the procedure is the [cellNexus quality-control steps](https://cellnexus.org/#quality-control-steps).
 
 ## Choose cells by cell type
 
@@ -59,6 +72,23 @@ metadata |>
 ```
 
 > **Exercise 1.** Count cells per `cell_type_unified_ensemble` for donors older than 50 years (`age_days > 50 * 365`). Which labels are rare enough that a proportion estimated from 50 cells would be mostly sampling noise?
+
+<details>
+<summary>Solution</summary>
+
+```r
+library(cellNexus)
+library(dplyr)
+
+get_metadata() |>
+  keep_quality_cells() |>
+  dplyr::filter(age_days > 50 * 365) |>
+  dplyr::count(cell_type_unified_ensemble, sort = TRUE)
+```
+
+A label with a few dozen cells across the whole atlas will have a very wide composition interval. Drop it from the cell-type list, or accept that its estimate is descriptive.
+
+</details>
 
 ## Choose cells by tissue
 
@@ -159,13 +189,40 @@ p_types <- obs_lung |>
 p_age + p_types & theme_bw()
 ```
 
-```{r manifest-figure, echo=FALSE, eval=TRUE, fig.cap="Reference cohort from the chapter analysis. Left: one bar per sample age. Right: cells per harmonised label."}
+```{r manifest-figure, echo=FALSE, eval=TRUE, fig.cap="Example cohort. Left: one bar per sample age. Right: cells per harmonised label."}
 knitr::include_graphics("images/manifest-plot.png")
 ```
 
 > **Exercise 2.** How many distinct samples fall in each `age_bin`?
 
+<details>
+<summary>Solution</summary>
+
+```r
+obs_lung |>
+  dplyr::distinct(sample_id, age_bin) |>
+  dplyr::count(age_bin)
+```
+
+Both bins should contain donors. A bin with a handful of samples cannot support the age term once `dataset_id` is in the model.
+
+</details>
+
 > **Exercise 3.** Cross-tabulate distinct samples by `dataset_id` and `age_binary`. Which studies contain donors of both age classes? A study that contains only one class cannot separate age from study, and both models below include `dataset_id`.
+
+<details>
+<summary>Solution</summary>
+
+```r
+obs_lung |>
+  dplyr::distinct(sample_id, dataset_id, age_binary) |>
+  dplyr::count(dataset_id, age_binary) |>
+  tidyr::pivot_wider(names_from = age_binary, values_from = n, values_fill = 0)
+```
+
+A study with a zero in either age class does not identify an age effect on its own. The fixed `dataset_id` term uses the studies that contain both classes.
+
+</details>
 
 Keep this R session open. The next page uses `obs_lung`.
 
