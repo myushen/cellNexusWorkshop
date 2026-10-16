@@ -1,0 +1,44 @@
+url: https://myushen.github.io/cellNexusWorkshop
+
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    primary: "#18BC9C"
+
+home:
+  title: "cellNexusWorkshop"
+  type: inverse
+
+navbar:
+  structure:
+    left: [intro, articles, reference]
+    right: [github]
+  components:
+    articles:
+      text: Articles
+      menu:
+        - text: "1. Query the atlas"
+          href: articles/query_the_atlas.html
+        - text: "2. Explore and visualise"
+          href: articles/explore_and_visualise.html
+        - text: "3. Compositional analysis"
+          href: articles/compositional_analysis.html
+        - text: "4. Gene expression"
+          href: articles/gene_expression.html
+        - text: Solutions
+          href: articles/solutions.html
+    github:
+      icon: fa-brands fa-github
+      href: https://github.com/myushen/cellNexusWorkshop
+      aria-label: GitHub
+
+articles:
+  - title: Workshop
+    navbar: ~
+    contents:
+      - query_the_atlas
+      - explore_and_visualise
+      - compositional_analysis
+      - gene_expression
+      - solutions

@@ -1,0 +1,35 @@
+name: rworkflows
+'on':
+  push:
+    branches:
+    - master
+    - main
+    - devel
+  pull_request:
+    branches:
+    - master
+    - main
+    - devel
+jobs:
+  rworkflows:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    name: ubuntu-latest (bioc devel)
+    container: ghcr.io/bioconductor/bioconductor_docker:devel
+    steps:
+    - uses: neurogenomics/rworkflows@master
+      with:
+        run_bioccheck: false
+        run_rcmdcheck: true
+        as_cran: false
+        run_vignettes: true
+        has_testthat: false
+        run_covr: false
+        run_pkgdown: true
+        has_runit: false
+        has_latex: false
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run_docker: false
+        runner_os: Linux
+        cache_version: cache-v1
+        docker_registry: ghcr.io
