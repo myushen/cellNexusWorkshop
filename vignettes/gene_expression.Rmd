@@ -55,6 +55,7 @@ if (!exists("obs_lung")) {
       age_days >= 365,
       age_days < 80 * 365
     ) |>
+    join_census_tissue() |>
     annotate_cell_nexus(min_cells_per_sample = 50)
 }
 ```
@@ -289,7 +290,7 @@ knitr::include_graphics("images/marker-boxplot.png")
 
 ## Score the signature on single cells
 
-If time remains. The score is the mean rank of the up genes minus the mean rank of the down genes, on the cells of the cluster that was tested. A shift between age classes is expected, because the genes were chosen on these donors. Treat it as a consistency check: a reversed or empty shift means a reversed contrast, the wrong cluster, or an identifier mismatch. Report how many signature genes were found in the matrix. Ensembl identifiers with a version suffix are a common way to lose most of the set. Generalisation needs donors held out before gene selection, or another cohort.
+If time remains. The score is a rank average [@foroutan2018singscore]: the mean rank of the up genes minus the mean rank of the down genes, on the cells of the cluster that was tested. Zero is a cell with no net signature, and a depleted cell stays below zero. A shift between age classes is expected, because the genes were chosen on these donors. Treat it as a consistency check: a reversed or empty shift means a reversed contrast, the wrong cluster, or an identifier mismatch. If the high scores sit in one corner of the UMAP, the cluster still mixes cell states. Report how many signature genes were found in the matrix. Ensembl identifiers with a version suffix are a common way to lose most of the set. Generalisation needs donors held out before gene selection, or another cohort.
 
 ```{r}
 library(singscore)

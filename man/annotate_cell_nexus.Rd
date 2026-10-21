@@ -2,7 +2,7 @@
 % Please edit documentation in R/annotate_cell_nexus.R
 \name{annotate_cell_nexus}
 \alias{annotate_cell_nexus}
-\title{Add age variables and drop sparse samples from a cellNexus query.}
+\title{Add age variables and keep respiratory cells from a cellNexus query.}
 \usage{
 annotate_cell_nexus(
   x,
@@ -11,14 +11,13 @@ annotate_cell_nexus(
 )
 }
 \arguments{
-\item{x}{A metadata table from \code{get_metadata()}, or a data frame
-with the same columns.}
+\item{x}{A metadata table from \code{get_metadata()} after
+\code{\link[=join_census_tissue]{join_census_tissue()}}, or a data frame with a \code{tissue} column.}
 
 \item{min_cells_per_sample}{Samples with fewer cells than this are dropped.
 Every cell of every retained sample is kept.}
 
-\item{tissue_groups}{Tissue-group label. Used only when \code{x} has a
-\code{tissue_groups} column. \code{NULL} skips the filter.}
+\item{tissue_groups}{Tissue-group label to keep. \code{NULL} skips the filter.}
 }
 \value{
 A data frame with one row per cell.
@@ -30,14 +29,15 @@ Intended usage, after a \code{get_metadata()} query:
 \if{html}{\out{<div class="sourceCode">}}\preformatted{obs_lung <- get_metadata() |>
   keep_quality_cells() |>
   dplyr::filter(dataset_id \%in\% respiratory_dataset_ids()) |>
+  join_census_tissue() |>
   annotate_cell_nexus(min_cells_per_sample = 50)
 }\if{html}{\out{</div>}}
 
-Adds \code{age_years}, \code{age_binary} (donors older than 50 years), \code{age_bin}
-(\code{20-49} / \code{50-79}), and a sample-scaled \code{age_years_scaled_centered}.
-Rewrites \code{dataset_id} with underscores so the identifier can be used in a
-model formula. Rows are returned in a fixed order, so a seeded subsample is
-reproducible. When the metadata still contains \code{tissue_groups}, rows are
-limited to \code{tissue_groups}. Current cellNexus metadata omits that column;
-the caller then defines tissue by \code{dataset_id}.
+\code{get_metadata()} does not carry a tissue group. \code{\link[=join_census_tissue]{join_census_tissue()}}
+attaches the CELLxGENE \code{tissue} label, and this function keeps the labels
+that belong to the respiratory system. It then adds \code{age_years},
+\code{age_binary} (donors older than 50 years), \code{age_bin} (\code{20-49} / \code{50-79}),
+and a sample-scaled \code{age_years_scaled_centered}. \code{dataset_id} is rewritten
+with underscores so the identifier can be used in a model formula. Rows are
+returned in a fixed order, so a seeded subsample is reproducible.
 }

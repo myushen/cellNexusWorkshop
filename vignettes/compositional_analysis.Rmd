@@ -31,6 +31,7 @@ if (!exists("obs_lung")) {
       age_days >= 365,
       age_days < 80 * 365
     ) |>
+    join_census_tissue() |>
     annotate_cell_nexus(min_cells_per_sample = 50)
 }
 ```
@@ -90,7 +91,7 @@ An effect is a change in share. Because shares sum to one, one real change produ
 
 ## Plot
 
-`age_binary` has two levels, so the summary is a boxplot. `remove_unwanted_effects = TRUE` shows proportions after the study term has been regressed out, which is the visual counterpart of the model. The blue box is the posterior predictive check: overlap between the observed points and the predictive distribution is evidence that the model describes these data.
+`age_binary` has two levels, so the summary is a boxplot. `remove_unwanted_effects = TRUE` shows proportions after the study term has been regressed out, which is the visual counterpart of the model. The blue box is the posterior predictive check [@gabry2019visualization]: the distribution of data the model would produce. Overlap between the observed points and that distribution is evidence that the model describes these data.
 
 ```{r composition-plot}
 sccomp_boxplot(

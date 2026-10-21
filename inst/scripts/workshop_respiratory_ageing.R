@@ -51,6 +51,7 @@ obs_lung <- get_metadata() |>
     age_days >= 365,
     age_days < 80 * 365
   ) |>
+  join_census_tissue() |>
   annotate_cell_nexus(min_cells_per_sample = 50)
 
 # ---- Composition ------------------------------------------------------------

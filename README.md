@@ -125,6 +125,7 @@ Participants leave with a script that defines a cohort from cellNexus metadata, 
 * Korsunsky et al. (2019). Fast, sensitive and accurate integration of single-cell data with Harmony. *Nature Methods* 16:1289–1296. <https://doi.org/10.1038/s41592-019-0619-0>
 * Love, Huber, and Anders (2014). Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. *Genome Biology* 15:550. <https://doi.org/10.1186/s13059-014-0550-8>
 * Foroutan et al. (2018). Single sample scoring of molecular phenotypes. *BMC Bioinformatics* 19:404. <https://doi.org/10.1186/s12859-018-2435-4>
+* Gabry et al. (2019). Visualization in Bayesian workflow. *Journal of the Royal Statistical Society Series A* 182:389–402. <https://doi.org/10.1111/rssa.12378>
 
 ## Publish this site
 

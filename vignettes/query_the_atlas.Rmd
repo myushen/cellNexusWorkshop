@@ -105,40 +105,22 @@ metadata |>
   dplyr::count()
 ```
 
-On metadata builds that still contain `tissue_groups`, the same idea is a single label, `"respiratory system"`. `annotate_cell_nexus()` applies that filter when the column is present. Current cellNexus tables omit `tissue_groups`, and the dataset list above is the tissue definition.
-
-```{r}
-if ("tissue_groups" %in% colnames(metadata)) {
-  metadata |>
-    dplyr::count(tissue_groups, sort = TRUE)
-}
-```
+`get_metadata()` does not carry a tissue label. `join_census_tissue()` attaches the CELLxGENE Census `tissue` for each cell. `annotate_cell_nexus()` then maps those labels onto `"respiratory system"` (lung, airway, pleura, and the lobe names) and keeps that group. The nine `dataset_id`s still pin which studies can enter. The tissue map drops a non-respiratory cell if one of those studies contains one.
 
 ## Choose cells by disease
 
-Disease and the fine CELLxGENE tissue label live on the Census observation table. Join them when you want to discover studies by disease. The download is large, so in the room the instructor may run this block while you continue with the pinned respiratory cohort.
+Disease lives on the same Census table. `join_census_tissue()` attaches it together with `tissue`. Count disease on the nine studies before building the cohort. Joining the whole atlas is a large download, so this call stays inside the study filter.
 
-`get_atlas_versions()` tells you which Census snapshot the atlas was built from. The cellNexus vignette uses Census `2024-07-01`; use the `census_version` that matches your `atlas_id`.
+`get_atlas_versions()` tells you which Census snapshot the atlas was built from. `join_census_tissue()` defaults to Census `2024-07-01`. Pass `census_version` when your `atlas_id` was built from another snapshot.
 
 ```{r}
 get_atlas_versions()
 
-census_metadata <- cellNexus:::get_census_metadata("2024-07-01")
-con <- dbplyr::remote_con(metadata)
-duckdb::duckdb_register_arrow(con, "census_metadata", census_metadata)
-
-metadata_census <- metadata |>
-  dplyr::left_join(
-    dplyr::tbl(con, "census_metadata") |>
-      dplyr::select(observation_joinid, dataset_id, tissue, disease, sex),
-    by = c("observation_joinid", "dataset_id")
-  )
-
-metadata_census |>
+metadata |>
+  dplyr::filter(dataset_id %in% respiratory_dataset_ids()) |>
+  join_census_tissue() |>
   dplyr::count(disease, sort = TRUE)
 ```
-
-`get_census_metadata()` is an internal cellNexus helper (`:::`). The case study below does not need it, because the nine studies are already selected.
 
 ## Build the respiratory ageing cohort
 
@@ -157,6 +139,7 @@ obs_lung <- get_metadata() |>
     age_days >= 365,
     age_days < 80 * 365
   ) |>
+  join_census_tissue() |>
   annotate_cell_nexus(min_cells_per_sample = 50)
 
 obs_lung |>
@@ -164,13 +147,15 @@ obs_lung |>
   dplyr::arrange(dplyr::desc(n_cells))
 ```
 
-`annotate_cell_nexus()` collects the query, derives the age variables, drops samples with fewer than 50 cells, and de-duplicates on `observation_joinid`. Every cell of every retained sample is kept. `sccomp` conditions on each sample's total, and the expression model carries library size as a covariate, so equal-size subsampling would throw away precision.
+`join_census_tissue()` attaches Census `tissue`. `annotate_cell_nexus()` keeps the respiratory labels, collects the query, derives the age variables, drops samples with fewer than 50 cells, and de-duplicates on `observation_joinid`. Every cell of every retained sample is kept. `sccomp` conditions on each sample's total, and the expression model carries library size as a covariate, so equal-size subsampling would throw away precision.
 
 `age_binary` is `TRUE` for donors older than 50 years. `age_bin` is the same split, labelled for plots. One encoding means the composition model and the expression model contrast the same donors. The boundary is a modelling choice: report it, and check that both sides are populated.
 
 `dataset_id` values are rewritten with underscores. Hyphens in a UUID become illegal coefficient names in limma. The filter above still uses the hyphenated identifiers, because it runs before that rewrite.
 
 ## Inspect the cohort before modelling
+
+Look at the age histogram and the cell-type bar chart before fitting a model. Both age classes should contain donors. Ages clumped into two distant groups will make a continuous age slope rest on whichever studies sit at the extremes. A cell type with only a handful of cells will have an uninformative composition interval.
 
 ```{r manifest-plot}
 p_age <- obs_lung |>

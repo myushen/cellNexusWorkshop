@@ -20,5 +20,6 @@ utils::globalVariables(c(
   "ncells",
   "observation_joinid",
   "sample_id",
+  "tissue",
   "tissue_groups"
 ))

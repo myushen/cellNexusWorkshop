@@ -36,6 +36,7 @@ if (!exists("obs_lung")) {
       age_days >= 365,
       age_days < 80 * 365
     ) |>
+    join_census_tissue() |>
     annotate_cell_nexus(min_cells_per_sample = 50)
 }
 ```
@@ -79,7 +80,7 @@ sce_qc |>
 
 Highly variable genes are selected per sample (`modelGeneVar(block = sample_id)`), so genes that vary within a donor rank above genes that merely differ between libraries [@lun2016workflow]. Harmony then removes the study axis from the PCA [@korsunsky2019harmony]. The UMAP is drawn from that embedding.
 
-CD45 (`PTPRC`, Ensembl `ENSG00000081237`) marks haematopoietic cells independently of the harmonised label. Immune cells should occupy the high-CD45 region.
+CD45 (`PTPRC`, Ensembl `ENSG00000081237`) marks haematopoietic cells independently of the harmonised label. After Harmony, immune cells should sit in the high-CD45 region and epithelial cells in the low-CD45 region.
 
 ```{r}
 hvgs_qc <- sce_qc |>
@@ -125,7 +126,7 @@ sce_qc |>
   labs(colour = "CD45 (PTPRC)")
 ```
 
-```{r cd45-figure, echo=FALSE, eval=TRUE, fig.cap="Example Harmony UMAP, coloured by CD45. Immune cells occupy the high-CD45 region."}
+```{r cd45-figure, echo=FALSE, eval=TRUE, fig.cap="Example Harmony UMAP, coloured by CD45. Immune cells occupy the high-CD45 region and epithelial cells the low-CD45 region."}
 knitr::include_graphics("images/cd45-umap.png")
 ```
 

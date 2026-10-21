@@ -30,6 +30,9 @@ Imports:
     stats,
     SummarizedExperiment
 Suggests:
+    cellNexus,
+    dbplyr,
+    duckdb,
     knitr,
     pkgdown,
     rmarkdown
