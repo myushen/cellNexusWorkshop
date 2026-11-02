@@ -41,12 +41,13 @@ inference_method <- Sys.getenv("CELLNEXUS_WORKSHOP_INFERENCE", "pathfinder")
 
 # ---- Cohort ----------------------------------------------------------------
 
+dataset_ids <- respiratory_dataset_ids()
 cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
 
 obs_lung <- get_metadata() |>
   keep_quality_cells() |>
   dplyr::filter(
-    dataset_id %in% respiratory_dataset_ids(),
+    dataset_id %in% dataset_ids,
     cell_type_unified_ensemble %in% cell_types_query,
     age_days >= 365,
     age_days < 80 * 365

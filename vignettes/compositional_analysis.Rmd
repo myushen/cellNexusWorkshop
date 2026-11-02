@@ -11,7 +11,23 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
+r_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "..", "R")
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = requireNamespace("pkgdown", quietly = TRUE) && pkgdown::in_pkgdown(),
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE,
+  cache.path = "compositional_analysis_cache/",
+  cache.extra = tools::md5sum(file.path(
+    r_dir,
+    c("annotate_cell_nexus.R", "select_de_cluster.R", "cohort_definition.R")
+  ))
+)
+library(dplyr)
+library(cellNexus)
+library(cellNexusWorkshop)
+library(sccomp)
 ```
 
 Continue in the same session. This block fits a donor-level model of immune cell-type proportions with `sccomp` [@mangiola2023sccomp].
@@ -23,11 +39,13 @@ library(sccomp)
 
 if (!exists("obs_lung")) {
   library(cellNexus)
+  dataset_ids <- respiratory_dataset_ids()
+  cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
   obs_lung <- get_metadata() |>
     keep_quality_cells() |>
     dplyr::filter(
-      dataset_id %in% respiratory_dataset_ids(),
-      cell_type_unified_ensemble %in% c(immune_cell_types(), epithelial_cell_types()),
+      dataset_id %in% dataset_ids,
+      cell_type_unified_ensemble %in% cell_types_query,
       age_days >= 365,
       age_days < 80 * 365
     ) |>
@@ -38,9 +56,7 @@ if (!exists("obs_lung")) {
 
 ## Why a composition model
 
-A proportion vector sums to one, so an increase in one cell type forces a decrease somewhere else. Counts are overdispersed relative to a binomial. One dissociated sample can move an entire effect. `sccomp` models the sample composition jointly, estimates a mean-variability association, and has an explicit outlier pass.
-
-The denominator is the immune compartment. Epithelial recovery depends on how hard the tissue was digested. A study that recovered many pneumocytes would push every immune proportion down, and that shift would enter the model as if it were age. Epithelial cells stay in `obs_lung` for the expression article.
+This step quantifies age-associated shifts in **cell-type composition** on the immune subset of `obs_lung` (`obs_composition`): one donor-level simplex per sample over the immune types of the **same nine respiratory studies**. Epithelial types are excluded here because their capture is driven by dissociation protocol as much as by biology, and including them would move the denominator of every immune proportion. **Pseudobulk DE** and UMAP validation filter the full table to `epithelial` instead.
 
 ```{r}
 obs_composition <- obs_lung |>
@@ -56,13 +72,13 @@ obs_composition |>
 
 ## Fit
 
-The formula is `~ age_binary + dataset_id`. `sample_id` is the replicate. `cell_type_unified_ensemble` is the group. `dataset_id` is a fixed effect, so the age contrast is within study. That is why Exercise 3 matters: a study with one age class competes with the age term.
+The formula is `~ age_binary + dataset_id`. `sample_id` is the replicate. `cell_type_unified_ensemble` is the group. `dataset_id` is a fixed effect, so the age contrast is within study.
 
 `bimodal_mean_variability_association = TRUE` lets rare and abundant cell types follow different variability regimes.
 
 The session default is `pathfinder`, which is fast enough to finish in the room. A result you would report uses Hamiltonian Monte Carlo (`inference_method = "hmc"`). Pathfinder intervals are a working approximation. Refit with `"hmc"` before you quote an effect, and read the sampler diagnostics on that fit. Set `CELLNEXUS_WORKSHOP_INFERENCE=hmc` for that fit. The first call compiles the Stan model and can take several minutes on top of the fit.
 
-```{r}
+```{r echo=FALSE}
 inference_method <- Sys.getenv("CELLNEXUS_WORKSHOP_INFERENCE", "pathfinder")
 
 sccomp_res <- obs_composition |>
@@ -85,7 +101,7 @@ sccomp_res |>
   dplyr::select(cell_type_unified_ensemble, dplyr::starts_with("c_"), c_FDR)
 ```
 
-Columns whose names start with `c_` carry the age effect, its interval, `c_FDR`, and sampler diagnostics. On an HMC fit, `c_rhat` near 1 and a large effective sample size are the checks you want. The effect is on the model's composition scale. Exponentiating it as a fold change in proportion is the wrong transformation. Say "the proportion of this cell type".
+Columns whose names start with `c_` carry the age effect, its interval, `c_FDR`, and sampler diagnostics. On an HMC fit, `c_rhat` near 1 and a large effective sample size are the checks you want. The effect is on the model's composition scale.
 
 An effect is a change in share. Because shares sum to one, one real change produces mirror-image changes in other labels. The label set is part of the result: this fit is a shift inside the immune compartment.
 
@@ -120,16 +136,5 @@ sccomp_res |>
 Read the sign of the effect column together with the boxplot. The contrast is donors over 50 against the reference level `"FALSE"` (50 and under), because `age_binary` was stored as character with `"FALSE"` first.
 
 </details>
-
-> **Exercise 7.** Write one sentence on why `epithelial`, `pneumocyte`, and `secretory` are absent from this fit. What question would the model answer if they were added back?
-
-<details>
-<summary>Solution</summary>
-
-Epithelial, pneumocyte, and secretory labels are left out so the proportions are shares of the immune compartment. Dissociation efficiency changes epithelial yield from study to study, and that technical shift would move every immune proportion. Adding the epithelial labels back answers a different question: change in share among immune and epithelial cells together. Report the label set with the effects.
-
-</details>
-
-If the fit is too slow for the time left, refit on a shorter label list (for example macrophage, CD14 monocytes, NK, naive and effector-memory T cells, naive B cells) and say so. The denominator changes, so the effects are a different question.
 
 Next: [Gene expression](gene_expression.html).

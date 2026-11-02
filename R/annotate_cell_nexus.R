@@ -62,9 +62,10 @@ get_tissue_grouped <- function(tbl) {
 #' Intended usage, after a `get_metadata()` query:
 #'
 #' ```
+#' dataset_ids <- respiratory_dataset_ids()
 #' obs_lung <- get_metadata() |>
 #'   keep_quality_cells() |>
-#'   dplyr::filter(dataset_id %in% respiratory_dataset_ids()) |>
+#'   dplyr::filter(dataset_id %in% dataset_ids) |>
 #'   join_census_tissue() |>
 #'   annotate_cell_nexus(min_cells_per_sample = 50)
 #' ```

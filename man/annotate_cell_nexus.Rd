@@ -26,9 +26,10 @@ A data frame with one row per cell.
 Intended usage, after a \code{get_metadata()} query:
 }
 \details{
-\if{html}{\out{<div class="sourceCode">}}\preformatted{obs_lung <- get_metadata() |>
+\if{html}{\out{<div class="sourceCode">}}\preformatted{dataset_ids <- respiratory_dataset_ids()
+obs_lung <- get_metadata() |>
   keep_quality_cells() |>
-  dplyr::filter(dataset_id \%in\% respiratory_dataset_ids()) |>
+  dplyr::filter(dataset_id \%in\% dataset_ids) |>
   join_census_tissue() |>
   annotate_cell_nexus(min_cells_per_sample = 50)
 }\if{html}{\out{</div>}}

@@ -11,14 +11,46 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
+r_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "..", "R")
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = requireNamespace("pkgdown", quietly = TRUE) && pkgdown::in_pkgdown(),
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE,
+  cache.path = "gene_expression_cache/",
+  cache.extra = tools::md5sum(file.path(
+    r_dir,
+    c("annotate_cell_nexus.R", "select_de_cluster.R", "cohort_definition.R")
+  ))
+)
+library(cellNexus)
+library(cellNexusWorkshop)
+library(dplyr)
+library(ggplot2)
+library(scater)
+library(scuttle)
+library(scran)
+library(scrapper)
+library(bluster)
+library(harmony)
+library(SingleCellExperiment)
+library(SummarizedExperiment)
+library(Matrix)
+library(tidySingleCellExperiment)
+library(tidySummarizedExperiment)
+library(tidybulk)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(stringr)
+library(singscore)
 ```
 
 Continue in the same session. This block integrates epithelial cells, aggregates sample-by-cluster pseudobulk, and tests donor-level age effects with DESeq2 through tidybulk [@love2014deseq2]. The last section scores the resulting signature back onto single cells [@foroutan2018singscore].
 
 The reusable script for everything you have run is installed with the package:
 
-```{r, eval=FALSE}
+```{r, eval=FALSE, cache=FALSE}
 file.edit(system.file(
   "scripts", "workshop_respiratory_ageing.R",
   package = "cellNexusWorkshop"
@@ -47,11 +79,13 @@ library(org.Hs.eg.db)
 library(stringr)
 
 if (!exists("obs_lung")) {
+  dataset_ids <- respiratory_dataset_ids()
+  cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
   obs_lung <- get_metadata() |>
     keep_quality_cells() |>
     dplyr::filter(
-      dataset_id %in% respiratory_dataset_ids(),
-      cell_type_unified_ensemble %in% c(immune_cell_types(), epithelial_cell_types()),
+      dataset_id %in% dataset_ids,
+      cell_type_unified_ensemble %in% cell_types_query,
       age_days >= 365,
       age_days < 80 * 365
     ) |>
@@ -64,11 +98,11 @@ if (!exists("obs_lung")) {
 
 The broad label `epithelial` mixes ciliated, secretory, basal, and alveolar states. We integrate cells, cut the embedding into six clusters, and test age inside the cluster that can support the design.
 
-The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS` (default 4000). The example figures use 12000 cells. Harmony here is for clustering and the UMAP. The counts still carry study effects, and the model below still includes `dataset_id`.
+The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS`. The example figures use 12000 cells. Harmony here is for clustering and the UMAP. The counts still carry study effects, and the model below still includes `dataset_id`.
 
 ```{r}
-epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "4000"))
-min_cells_pb <- 10L
+epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "12000"))
+min_cells_pb <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MIN_CELLS_PB", "10"))
 
 set.seed(42)
 epi_cells <- obs_lung |>
@@ -124,7 +158,6 @@ k-means labels are arbitrary. `E1` in your session is not `E1` in the example fi
 
 `aggregateAcrossCells.se()` sums raw counts within each sample and cluster. The column `ncells` is the number of cells that entered each pseudobulk. Profiles with fewer than 10 cells are dropped. `log_cell_count` is a scaled depth covariate so profiles built from different numbers of cells are comparable.
 
-Precomputed `get_pseudobulk()` is sample by broad cell type. It is the right object for a cell-type-level question. This article needs sample by cluster, so the aggregation is done here.
 
 ```{r}
 pb_se <- scrapper::aggregateAcrossCells.se(
@@ -147,8 +180,6 @@ pb_se <- pb_se |>
 pb_se
 ```
 
-Confirm that `ncells` is the size of the aggregation group. Row sums of the count matrix are library size, which is orders of magnitude larger, and using them as the depth covariate answers a different question.
-
 ## Choose a cluster and fit the age model
 
 `select_de_cluster()` keeps clusters in which both age classes are represented and the design can separate age from study. It prefers the cluster supported by the most studies that contribute both age classes. The default screen asks for 150 cells and 5 samples in each class. A 4000-cell cap may need the slightly lower thresholds below. If the function stops, read the printed screen and lower `min_samples_per_class`, or raise `CELLNEXUS_WORKSHOP_MAX_CELLS` and rebuild `pb_se`.
@@ -169,7 +200,7 @@ epi_cluster_de_top <- epi_cluster_screen$cluster
 epi_cluster_screen$screen
 ```
 
-> **Exercise 8.** From `epi_cluster_screen$screen`, which cluster was chosen? How many studies in that cluster contribute both age classes (`n_datasets_spanning_age`)? Quote the screen table with the result. The label alone is not reproducible.
+> **Exercise 7.** From `epi_cluster_screen$screen`, which cluster was chosen? How many studies in that cluster contribute both age classes (`n_datasets_spanning_age`)? Quote the screen table with the result. The label alone is not reproducible.
 
 <details>
 <summary>Solution</summary>
@@ -220,7 +251,7 @@ pb_se <- pb_se |>
   )
 ```
 
-`adjust_abundance()` is for the figure. The test used the unadjusted counts. Batch-adjusted values stay out of any further test.
+Marker boxplots use tidybulk `adjust_abundance()` (`limma_remove_batch_effect`) on the selected cluster's pseudobulks.
 
 ```{r}
 de_results <- rowData(pb_se) |>
@@ -279,7 +310,7 @@ ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
 knitr::include_graphics("images/marker-boxplot.png")
 ```
 
-> **Exercise 9.** In `de_contrast`, which age class is the numerator? Check one gene in `signature_up` against its boxplot and confirm the direction matches.
+> **Exercise 8.** In `de_contrast`, which age class is the numerator? Check one gene in `signature_up` against its boxplot and confirm the direction matches.
 
 <details>
 <summary>Solution</summary>

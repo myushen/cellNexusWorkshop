@@ -11,10 +11,32 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, message = FALSE, warning = FALSE)
+r_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "..", "R")
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = requireNamespace("pkgdown", quietly = TRUE) && pkgdown::in_pkgdown(),
+  message = FALSE,
+  warning = FALSE,
+  cache = TRUE,
+  cache.path = "explore_and_visualise_cache/",
+  cache.extra = tools::md5sum(file.path(
+    r_dir,
+    c("annotate_cell_nexus.R", "select_de_cluster.R", "cohort_definition.R")
+  ))
+)
+library(cellNexus)
+library(cellNexusWorkshop)
+library(dplyr)
+library(ggplot2)
+library(scater)
+library(scran)
+library(harmony)
+library(SingleCellExperiment)
+library(tidySingleCellExperiment)
+library(tidyseurat)
 ```
 
-Continue in the session from [Query the atlas](query_the_atlas.html). This block downloads a capped SingleCellExperiment, checks that immune and epithelial cells separate, and shows the same cells as a Seurat object.
+Continue in the session from [Query the atlas](query_the_atlas.html). This block downloads a SingleCellExperiment object, checks that immune and epithelial cells separate, and shows the same cells as a Seurat object.
 
 ```{r}
 library(cellNexus)
@@ -28,11 +50,13 @@ library(SingleCellExperiment)
 library(tidySingleCellExperiment)
 
 if (!exists("obs_lung")) {
+  dataset_ids <- respiratory_dataset_ids()
+  cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
   obs_lung <- get_metadata() |>
     keep_quality_cells() |>
     dplyr::filter(
-      dataset_id %in% respiratory_dataset_ids(),
-      cell_type_unified_ensemble %in% c(immune_cell_types(), epithelial_cell_types()),
+      dataset_id %in% dataset_ids,
+      cell_type_unified_ensemble %in% cell_types_query,
       age_days >= 365,
       age_days < 80 * 365
     ) |>
@@ -43,13 +67,14 @@ if (!exists("obs_lung")) {
 
 ## Download a SingleCellExperiment
 
-`get_single_cell_experiment()` reads the count matrices for the cells in a metadata table and returns one `SingleCellExperiment`. The workshop cap keeps the download inside a session. The example figures on this site use 12,000 cells. Set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` before this chunk to match them. Allow several minutes, and about 32 GB of RAM for the larger cap.
+`get_single_cell_experiment()` reads the count matrices for the cells in the queried metadata table and returns one `SingleCellExperiment`.
 
-Cells are subsampled within sample, and the number of samples is capped, so a few large libraries do not dominate the highly variable genes.
+In this workshop, cells are subsampled within sample, and the number of samples is capped, so a few large libraries do not dominate the highly variable genes. It caps the download at 12,000 cells, and one sample does not exceed 100 cells.
+
 
 ```{r}
-max_cells_qc <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "4000"))
-cells_per_sample_qc <- 80L
+max_cells_qc <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "12000"))
+cells_per_sample_qc <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_QC_CELLS_PER_SAMPLE", "100"))
 n_samples_qc <- max(1L, max_cells_qc %/% cells_per_sample_qc)
 
 set.seed(42)
@@ -130,16 +155,6 @@ sce_qc |>
 knitr::include_graphics("images/cd45-umap.png")
 ```
 
-The same grammar colours the embedding by the harmonised label.
-
-```{r}
-sce_qc |>
-  ggplot(aes(UMAP1, UMAP2, colour = cell_type_unified_ensemble)) +
-  geom_point(size = 0.3, alpha = 0.6) +
-  coord_equal() +
-  theme_bw() +
-  labs(colour = "Cell type")
-```
 
 > **Exercise 4.** Colour the same UMAP by `dataset_id`. After Harmony, study identity should be mixed within a cell-type region. Islands that follow study boundaries are under-correction. Harmony adjusts the embedding used for the picture. It does not adjust the counts, so the models in the next two articles still include `dataset_id`.
 
@@ -178,7 +193,7 @@ Labels missing from this subsample are absent because of the cap, not because th
 
 ## The same cells as a Seurat object
 
-`get_seurat()` is `get_single_cell_experiment()` followed by the Seurat conversion. Pass a small metadata table. A handful of cells spread across many files downloads a handful of files.
+`get_seurat()` reads the count matrices for the cells in the queried metadata table and returns a `Seurat` object.
 
 ```{r}
 library(tidyseurat)

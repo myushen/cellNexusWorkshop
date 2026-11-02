@@ -11,9 +11,9 @@ This is the page to follow during the session. Read this page, then the articles
 
 ## Instructor names and contact information
 
-* Mengyuan Shen <shen.m@wehi.edu.au>
-* Yingnan Gao <yingnan.gao@adelaide.edu.au>
-* Stefano Mangiola <stefano.mangiola@adelaide.edu.au>
+* Mengyuan Shen <a href="mailto:shen.m@wehi.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> shen.m@wehi.edu.au</a>
+* Yingnan Gao <a href="mailto:yingnan.gao@adelaide.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> yingnan.gao@adelaide.edu.au</a>
+* Stefano Mangiola <a href="mailto:stefano.mangiola@adelaide.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> stefano.mangiola@adelaide.edu.au</a>
 
 ## Syllabus
 
