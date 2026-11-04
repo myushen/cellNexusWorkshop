@@ -78,7 +78,7 @@ The formula is `~ age_binary + dataset_id`. `sample_id` is the replicate. `cell_
 
 The session default is `pathfinder`, which is fast enough to finish in the room. A result you would report uses Hamiltonian Monte Carlo (`inference_method = "hmc"`). Pathfinder intervals are a working approximation. Refit with `"hmc"` before you quote an effect, and read the sampler diagnostics on that fit. Set `CELLNEXUS_WORKSHOP_INFERENCE=hmc` for that fit. The first call compiles the Stan model and can take several minutes on top of the fit.
 
-```{r echo=FALSE}
+```{r results="hide"}
 inference_method <- Sys.getenv("CELLNEXUS_WORKSHOP_INFERENCE", "pathfinder")
 
 sccomp_res <- obs_composition |>
@@ -87,9 +87,12 @@ sccomp_res <- obs_composition |>
     sample = "sample_id",
     cell_group = "cell_type_unified_ensemble",
     bimodal_mean_variability_association = TRUE,
-    inference_method = inference_method
+    inference_method = inference_method,
+    output_directory = "/vast/scratch/users/shen.m/sccomp_draws_files",
+    cache_stan_model = "/vast/scratch/users/shen.m/"
   ) |>
-  sccomp_remove_outliers() |>
+  sccomp_remove_outliers(output_directory = "/vast/scratch/users/shen.m/sccomp_draws_files",
+                         cache_stan_model = "/vast/scratch/users/shen.m/") |>
   sccomp_test()
 ```
 
@@ -114,13 +117,11 @@ sccomp_boxplot(
   sccomp_res,
   factor = "age_binary",
   significance_threshold = 0.05,
-  remove_unwanted_effects = TRUE
+  remove_unwanted_effects = TRUE,
+  cache_stan_model = "/vast/scratch/users/shen.m/"
 )
 ```
 
-```{r composition-figure, echo=FALSE, eval=TRUE, fig.cap="Example sccomp boxplots from a Hamiltonian Monte Carlo fit. Each point is one sample, after the study term has been removed."}
-knitr::include_graphics("images/composition-boxplot.png")
-```
 
 > **Exercise 6.** Which cell types have `c_FDR < 0.05` for `factor == "age_binary"`? For each, is the estimated effect higher or lower in donors over 50?
 

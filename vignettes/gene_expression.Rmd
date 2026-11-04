@@ -44,6 +44,7 @@ library(AnnotationDbi)
 library(org.Hs.eg.db)
 library(stringr)
 library(singscore)
+library(DESeq2)
 ```
 
 Continue in the same session. This block integrates epithelial cells, aggregates sample-by-cluster pseudobulk, and tests donor-level age effects with DESeq2 through tidybulk [@love2014deseq2]. The last section scores the resulting signature back onto single cells [@foroutan2018singscore].
@@ -77,6 +78,7 @@ library(tidybulk)
 library(AnnotationDbi)
 library(org.Hs.eg.db)
 library(stringr)
+library(DESeq2)
 
 if (!exists("obs_lung")) {
   dataset_ids <- respiratory_dataset_ids()
@@ -148,9 +150,6 @@ sce_epi |>
   theme_bw()
 ```
 
-```{r epi-figure, echo=FALSE, eval=TRUE, fig.cap="Example Harmony UMAP of epithelial cells, coloured by the six k-means clusters."}
-knitr::include_graphics("images/epithelial-umap.png")
-```
 
 k-means labels are arbitrary. `E1` in your session is not `E1` in the example figure. The next section chooses the cluster from a screen, which you report alongside the label.
 
@@ -306,9 +305,6 @@ ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
   )
 ```
 
-```{r marker-figure, echo=FALSE, eval=TRUE, fig.cap="Example marker boxplots. Each point is a donor-level pseudobulk profile in the cluster the screen selected. Abundance is log1p of the batch-adjusted count."}
-knitr::include_graphics("images/marker-boxplot.png")
-```
 
 > **Exercise 8.** In `de_contrast`, which age class is the numerator? Check one gene in `signature_up` against its boxplot and confirm the direction matches.
 

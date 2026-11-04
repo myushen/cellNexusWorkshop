@@ -67,9 +67,12 @@ sccomp_res <- obs_composition |>
     sample = "sample_id",
     cell_group = "cell_type_unified_ensemble",
     bimodal_mean_variability_association = TRUE,
-    inference_method = inference_method
+    inference_method = inference_method,
+    cache_stan_model = "/vast/scratch/users/shen.m/",
+    output_directory = "/vast/scratch/users/shen.m/sccomp_draws_files"
   ) |>
-  sccomp_remove_outliers() |>
+  sccomp_remove_outliers(output_directory = "/vast/scratch/users/shen.m/sccomp_draws_files",
+                         cache_stan_model = "/vast/scratch/users/shen.m/") |>
   sccomp_test()
 
 # ---- Epithelial integration ------------------------------------------------

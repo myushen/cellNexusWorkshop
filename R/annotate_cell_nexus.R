@@ -27,7 +27,7 @@
 join_census_tissue <- function(metadata, census_version = "2024-07-01") {
   census_metadata <- cellNexus:::get_census_metadata(census_version)
   con <- dbplyr::remote_con(metadata)
-  try(duckdb::duckdb_unregister(con, "census_metadata"), silent = TRUE)
+  try(duckdb::duckdb_unregister_arrow(con, "census_metadata"), silent = TRUE)
   duckdb::duckdb_register_arrow(con, "census_metadata", census_metadata)
   metadata |>
     dplyr::left_join(

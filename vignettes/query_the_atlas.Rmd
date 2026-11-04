@@ -120,20 +120,21 @@ respiratory_dataset_ids()
 ```
 
 ## Query metadata by tissue
+
 ```{r}
 dataset_ids <- respiratory_dataset_ids()
-metadata |>
+metadata_respiratory <- metadata |>
   dplyr::filter(dataset_id %in% dataset_ids) |>
-  join_census_tissue() |>
+  join_census_tissue()
+
+metadata_respiratory |>
   dplyr::count(tissue, sort = TRUE)
 ```
 
 ## Query metadata by disease
 
 ```{r}
-metadata |>
-  dplyr::filter(dataset_id %in% dataset_ids) |>
-  join_census_tissue() |>
+metadata_respiratory |>
   dplyr::count(disease, sort = TRUE)
 ```
 
@@ -185,9 +186,6 @@ p_types <- obs_lung |>
 p_age + p_types & theme_bw()
 ```
 
-```{r manifest-figure, echo=FALSE, eval=TRUE, fig.cap="Example cohort. Left: one bar per sample age. Right: cells per harmonised label."}
-knitr::include_graphics("images/manifest-plot.png")
-```
 
 > **Exercise 2.** How many distinct samples fall in each `age_bin`?
 

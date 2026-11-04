@@ -8,20 +8,16 @@ export(respiratory_dataset_ids)
 export(select_de_cluster)
 import(stats)
 importFrom(Matrix,colSums)
-importFrom(SummarizedExperiment,
-  assay,
-  colData
-)
-importFrom(dplyr,
-  any_of,
-  arrange,
-  collect,
-  desc,
-  distinct,
-  left_join,
-  mutate,
-  n,
-  n_distinct,
-  select,
-  summarise
-)
+importFrom(SummarizedExperiment,assay)
+importFrom(SummarizedExperiment,colData)
+importFrom(dplyr,any_of)
+importFrom(dplyr,arrange)
+importFrom(dplyr,collect)
+importFrom(dplyr,desc)
+importFrom(dplyr,distinct)
+importFrom(dplyr,left_join)
+importFrom(dplyr,mutate)
+importFrom(dplyr,n)
+importFrom(dplyr,n_distinct)
+importFrom(dplyr,select)
+importFrom(dplyr,summarise)
