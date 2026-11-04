@@ -102,16 +102,6 @@ first.
 
 ## Exercise 7
 
-Epithelial, pneumocyte, and secretory labels are left out so the
-proportions are shares of the immune compartment. Dissociation
-efficiency changes epithelial yield from study to study, and that
-technical shift would move every immune proportion. Adding the
-epithelial labels back answers a different question: change in share
-among immune and epithelial cells together. Report the label set with
-the effects.
-
-## Exercise 8
-
 ``` r
 
 epi_cluster_de_top
@@ -123,7 +113,7 @@ are sorted by `n_datasets_spanning_age`, then by the number of
 pseudobulk profiles. Quote `n_datasets_spanning_age` for that row. A
 value of 1 means the age term rests on a single study.
 
-## Exercise 9
+## Exercise 8
 
 `c("age_binary", "old", "young")` tests old against young. Positive
 `log2FoldChange` means higher abundance in donors over 50. The boxplot

@@ -38,6 +38,7 @@ library(tidybulk)
 library(AnnotationDbi)
 library(org.Hs.eg.db)
 library(stringr)
+library(DESeq2)
 
 if (!exists("obs_lung")) {
   dataset_ids <- respiratory_dataset_ids()
@@ -61,15 +62,15 @@ The broad label `epithelial` mixes ciliated, secretory, basal, and
 alveolar states. We integrate cells, cut the embedding into six
 clusters, and test age inside the cluster that can support the design.
 
-The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS` (default 4000).
-The example figures use 12000 cells. Harmony here is for clustering and
-the UMAP. The counts still carry study effects, and the model below
-still includes `dataset_id`.
+The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS`. The example
+figures use 12000 cells. Harmony here is for clustering and the UMAP.
+The counts still carry study effects, and the model below still includes
+`dataset_id`.
 
 ``` r
 
-epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "4000"))
-min_cells_pb <- 10L
+epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "12000"))
+min_cells_pb <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MIN_CELLS_PB", "10"))
 
 set.seed(42)
 epi_cells <- obs_lung |>
@@ -118,12 +119,6 @@ sce_epi |>
 
 ![](gene_expression_files/figure-html/epi-umap-1.png)
 
-![Example Harmony UMAP of epithelial cells, coloured by the six k-means
-clusters.](images/epithelial-umap.png)
-
-Example Harmony UMAP of epithelial cells, coloured by the six k-means
-clusters.
-
 k-means labels are arbitrary. `E1` in your session is not `E1` in the
 example figure. The next section chooses the cluster from a screen,
 which you report alongside the label.
@@ -135,12 +130,6 @@ sums raw counts within each sample and cluster. The column `ncells` is
 the number of cells that entered each pseudobulk. Profiles with fewer
 than 10 cells are dropped. `log_cell_count` is a scaled depth covariate
 so profiles built from different numbers of cells are comparable.
-
-Precomputed
-[`get_pseudobulk()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_pseudobulk.html)
-is sample by broad cell type. It is the right object for a
-cell-type-level question. This article needs sample by cluster, so the
-aggregation is done here.
 
 ``` r
 
@@ -165,20 +154,16 @@ pb_se
 ```
 
     ## class: RangedSummarizedExperiment 
-    ## dim: 16315 240 
+    ## dim: 16315 239 
     ## metadata(3): aggregated latest_filter_scope_report
     ##   latest_mutate_scope_report
     ## assays(2): counts detected
     ## rownames(16315): ENSG00000144837 ENSG00000187554 ... ENSG00000120539
     ##   ENSG00000205420
     ## rowData names(0):
-    ## colnames(240): 1 7 ... 771 772
+    ## colnames(239): 1 7 ... 775 776
     ## colData names(50): factor.sample_id factor.epi_cluster ... epi_cluster
     ##   log_cell_count
-
-Confirm that `ncells` is the size of the aggregation group. Row sums of
-the count matrix are library size, which is orders of magnitude larger,
-and using them as the depth covariate answers a different question.
 
 ## Choose a cluster and fit the age model
 
@@ -209,18 +194,18 @@ epi_cluster_screen$screen
 ```
 
     ##   epi_cluster n_pseudobulk n_cells n_cells_young n_cells_old n_samples_young
-    ## 1          E2           59    1879          1050         829              31
-    ## 2          E1           46    1512           933         579              27
-    ## 3          E5           42     909           609         300              28
-    ## 4          E3           39    3090           929        2161              18
-    ## 5          E6           26    2421          2041         380              18
+    ## 1          E2           59    1882          1054         828              31
+    ## 2          E1           46    1506           933         573              27
+    ## 3          E5           41     898           596         302              27
+    ## 4          E3           39    3093           928        2165              18
+    ## 5          E6           26    2418          2042         376              18
     ## 6          E4           28     569           184         385               8
     ##   n_samples_old n_datasets n_datasets_spanning_age frac_young  frac_old
-    ## 1            28          5                       3  0.5588079 0.4411921
-    ## 2            19          5                       1  0.6170635 0.3829365
-    ## 3            14          3                       1  0.6699670 0.3300330
-    ## 4            21          3                       1  0.3006472 0.6993528
-    ## 5             8          4                       1  0.8430401 0.1569599
+    ## 1            28          5                       3  0.5600425 0.4399575
+    ## 2            19          5                       1  0.6195219 0.3804781
+    ## 3            14          3                       1  0.6636971 0.3363029
+    ## 4            21          3                       1  0.3000323 0.6999677
+    ## 5             8          4                       1  0.8444996 0.1555004
     ## 6            20          4                       0  0.3233743 0.6766257
     ##   full_rank eligible
     ## 1      TRUE     TRUE
@@ -230,7 +215,7 @@ epi_cluster_screen$screen
     ## 5      TRUE    FALSE
     ## 6     FALSE    FALSE
 
-> **Exercise 8.** From `epi_cluster_screen$screen`, which cluster was
+> **Exercise 7.** From `epi_cluster_screen$screen`, which cluster was
 > chosen? How many studies in that cluster contribute both age classes
 > (`n_datasets_spanning_age`)? Quote the screen table with the result.
 > The label alone is not reproducible.
@@ -295,9 +280,9 @@ pb_se <- pb_se |>
 
     ## Coefficients not estimable: dataset_ide04daea4_4412_45b5_989e_76a9be070a89
 
+Marker boxplots use tidybulk
 [`adjust_abundance()`](https://rdrr.io/pkg/tidybulk/man/adjust_abundance-methods.html)
-is for the figure. The test used the unadjusted counts. Batch-adjusted
-values stay out of any further test.
+(`limma_remove_batch_effect`) on the selected cluster’s pseudobulks.
 
 ``` r
 
@@ -326,17 +311,17 @@ signature_down <- de_results |>
 signature_up
 ```
 
-    ## # A tibble: 7 x 9
+    ## # A tibble: 7 × 9
     ##   .feature        .abundant baseMean log2FoldChange lfcSE  stat    pvalue   padj
     ##   <chr>           <lgl>        <dbl>          <dbl> <dbl> <dbl>     <dbl>  <dbl>
-    ## 1 ENSG00000263639 TRUE        196.             4.44 0.777  5.71   4.88e-6 0.0522
-    ## 2 ENSG00000127324 TRUE          5.57           3.22 0.536  6.00   1.78e-5 0.0952
-    ## 3 ENSG00000133636 TRUE         34.8            5.31 1.18   4.51   1.25e-4 0.446 
-    ## 4 ENSG00000117983 TRUE        164.             3.89 0.866  4.49   4.30e-4 1     
-    ## 5 ENSG00000244734 TRUE         39.3            3.12 0.720  4.33   1.64e-3 1     
-    ## 6 ENSG00000125999 TRUE        458.             2.02 0.562  3.60   3.46e-2 1     
-    ## 7 ENSG00000161055 TRUE        851.             2.25 0.728  3.10   4.25e-2 1     
-    ## # i 1 more variable: gene_symbol <chr>
+    ## 1 ENSG00000263639 TRUE        196.             4.43 0.777  5.70   5.18e-6 0.0555
+    ## 2 ENSG00000127324 TRUE          5.62           3.12 0.541  5.76   4.52e-5 0.242 
+    ## 3 ENSG00000133636 TRUE         34.9            5.32 1.18   4.52   1.21e-4 0.430 
+    ## 4 ENSG00000117983 TRUE        164.             3.89 0.866  4.49   4.24e-4 1     
+    ## 5 ENSG00000244734 TRUE         39.4            3.10 0.720  4.30   1.79e-3 1     
+    ## 6 ENSG00000125999 TRUE        459.             2.02 0.561  3.60   3.44e-2 1     
+    ## 7 ENSG00000161055 TRUE        850.             2.25 0.728  3.09   4.33e-2 1     
+    ## # ℹ 1 more variable: gene_symbol <chr>
 
 The signature uses a nominal p-value cutoff, capped at 25 genes in each
 direction. It is a gene set for scoring. A claim about an individual
@@ -371,15 +356,7 @@ ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
 
 ![](gene_expression_files/figure-html/marker-plot-1.png)
 
-![Example marker boxplots. Each point is a donor-level pseudobulk
-profile in the cluster the screen selected. Abundance is log1p of the
-batch-adjusted count.](images/marker-boxplot.png)
-
-Example marker boxplots. Each point is a donor-level pseudobulk profile
-in the cluster the screen selected. Abundance is log1p of the
-batch-adjusted count.
-
-> **Exercise 9.** In `de_contrast`, which age class is the numerator?
+> **Exercise 8.** In `de_contrast`, which age class is the numerator?
 > Check one gene in `signature_up` against its boxplot and confirm the
 > direction matches.
 

@@ -2,7 +2,7 @@
 
 Continue in the session from [Query the
 atlas](https://myushen.github.io/cellNexusWorkshop/articles/query_the_atlas.md).
-This block downloads a capped SingleCellExperiment, checks that immune
+This block downloads a SingleCellExperiment object, checks that immune
 and epithelial cells separate, and shows the same cells as a Seurat
 object.
 
@@ -37,18 +37,18 @@ if (!exists("obs_lung")) {
 ## Download a SingleCellExperiment
 
 [`get_single_cell_experiment()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_single_cell_experiment.html)
-reads the count matrices for the cells in a metadata table and returns
-one `SingleCellExperiment`. The workshop cap keeps the download inside a
-session. The example figures on this site use 12,000 cells. Set
-`CELLNEXUS_WORKSHOP_MAX_CELLS=12000` before this chunk to match them.
+reads the count matrices for the cells in the queried metadata table and
+returns one `SingleCellExperiment`.
 
-Cells are subsampled within sample, and the number of samples is capped,
-so a few large libraries do not dominate the highly variable genes.
+In this workshop, cells are subsampled within sample, and the number of
+samples is capped, so a few large libraries do not dominate the highly
+variable genes. It caps the download at 12,000 cells, and one sample
+does not exceed 100 cells.
 
 ``` r
 
-max_cells_qc <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "4000"))
-cells_per_sample_qc <- 80L
+max_cells_qc <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "12000"))
+cells_per_sample_qc <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_QC_CELLS_PER_SAMPLE", "100"))
 n_samples_qc <- max(1L, max_cells_qc %/% cells_per_sample_qc)
 
 set.seed(42)
@@ -68,27 +68,27 @@ sce_qc <- sampled_qc |>
 sce_qc
 ```
 
-    ## # A SingleCellExperiment-tibble abstraction: 11,987 x 46
-    ## # Features=16315 | Cells=11987 | Assays=counts, logcounts
+    ## # A SingleCellExperiment-tibble abstraction: 11,947 × 46
+    ## # Features=16315 | Cells=11947 | Assays=counts, logcounts
     ##    .cell observation_joinid dataset_id sample_id donor_id feature_count age_days
     ##    <chr> <chr>              <chr>      <chr>     <chr>            <int>    <int>
-    ##  1 29_1  C2v>l0_YWj         2adb1f8a_~ fbd957e8~ Donor23          26405    16790
-    ##  2 699_2 eb&0;%#_?D         093d3bfe_~ 0ce45088~ A40              33145    23360
-    ##  3 638_2 dK=2kQdg$k         093d3bfe_~ 5b82978f~ A48              33145    23542
-    ##  4 632_2 VPz4bhv{Kg         093d3bfe_~ 5ee73982~ A37              33145    21535
-    ##  5 645_2 rqQvRvB{Of         093d3bfe_~ 5ee73982~ A37              33145    21535
-    ##  6 650_2 PwHXYWv74~         093d3bfe_~ 5ee73982~ A37              33145    21535
-    ##  7 283_2 3<IN)dSug5         093d3bfe_~ 60197164~ A26              33145    27375
-    ##  8 288_2 yiwH8cN91Z         093d3bfe_~ 60197164~ A26              33145    27375
-    ##  9 289_2 vVY?$M0^J8         093d3bfe_~ 60197164~ A26              33145    27375
-    ## 10 129_2 cK(Q>qOqbP         093d3bfe_~ 67aafc07~ A37              33145    21535
-    ## # i 11,977 more rows
-    ## # i 39 more variables: nFeature_expressed_in_sample <int>, nCount_RNA <dbl>,
+    ##  1 480_1 @P1l0E6q;`         093d3bfe_… 162d6dc8… A40              33145    23360
+    ##  2 478_1 6y{WgEh3>=         093d3bfe_… 2edac3a0… A41              33145    19892
+    ##  3 844_1 sj#d$bsNrL         093d3bfe_… 4a39d4b0… A32              33145    10585
+    ##  4 745_1 S{GuMjoYG5         093d3bfe_… 54c9d04d… A44              33145    24090
+    ##  5 290_1 {Xj8TQ}^_U         093d3bfe_… 60197164… A26              33145    27375
+    ##  6 293_1 Yei%1e`|FZ         093d3bfe_… 60197164… A26              33145    27375
+    ##  7 48_1  X>3BUsmnnX         093d3bfe_… 67aafc07… A37              33145    21535
+    ##  8 100_1 91uvjSj6W%         093d3bfe_… 67aafc07… A37              33145    21535
+    ##  9 96_1  {OH`f$Ny|H         093d3bfe_… 67aafc07… A37              33145    21535
+    ## 10 75_1  O;tcgIpuAR         093d3bfe_… 67aafc07… A37              33145    21535
+    ## # ℹ 11,937 more rows
+    ## # ℹ 39 more variables: nFeature_expressed_in_sample <int>, nCount_RNA <dbl>,
     ## #   empty_droplet <lgl>, cell_type_unified_ensemble <chr>, is_immune <lgl>,
     ## #   subsets_Mito_percent <int>, subsets_Ribo_percent <int>,
     ## #   high_mitochondrion <lgl>, high_ribosome <lgl>, alive <lgl>,
     ## #   scDblFinder.class <chr>, file_id_cellNexus_single_cell <chr>,
-    ## #   file_id_cellNexus_pseudobulk <chr>, count_upper_bound <dbl>, ...
+    ## #   file_id_cellNexus_pseudobulk <chr>, count_upper_bound <dbl>, …
 
 With `tidySingleCellExperiment` loaded, the object prints as a tibble
 and accepts `dplyr` verbs and `ggplot2`. The underlying assay is
@@ -100,20 +100,20 @@ sce_qc |>
   dplyr::count(cell_type_unified_ensemble, sort = TRUE)
 ```
 
-    ## # A tibble: 29 x 2
+    ## # A tibble: 29 × 2
     ##    cell_type_unified_ensemble     n
     ##    <chr>                      <int>
-    ##  1 pneumocyte                  2899
-    ##  2 epithelial                  2656
-    ##  3 macrophage                  2378
-    ##  4 cd14 mono                    653
-    ##  5 cd8 tem                      582
-    ##  6 nk                           559
-    ##  7 secretory                    527
-    ##  8 plasma                       342
-    ##  9 cdc                          197
-    ## 10 mast                         186
-    ## # i 19 more rows
+    ##  1 epithelial                  2767
+    ##  2 pneumocyte                  2706
+    ##  3 macrophage                  2466
+    ##  4 cd14 mono                    604
+    ##  5 nk                           590
+    ##  6 secretory                    562
+    ##  7 cd8 tem                      537
+    ##  8 plasma                       307
+    ##  9 mast                         198
+    ## 10 cdc                          167
+    ## # ℹ 19 more rows
 
 ## Integrate studies and colour by CD45
 
@@ -183,20 +183,6 @@ region.](images/cd45-umap.png)
 Example Harmony UMAP, coloured by CD45. Immune cells occupy the
 high-CD45 region and epithelial cells the low-CD45 region.
 
-The same grammar colours the embedding by the harmonised label.
-
-``` r
-
-sce_qc |>
-  ggplot(aes(UMAP1, UMAP2, colour = cell_type_unified_ensemble)) +
-  geom_point(size = 0.3, alpha = 0.6) +
-  coord_equal() +
-  theme_bw() +
-  labs(colour = "Cell type")
-```
-
-![](explore_and_visualise_files/figure-html/unnamed-chunk-5-1.png)
-
 > **Exercise 4.** Colour the same UMAP by `dataset_id`. After Harmony,
 > study identity should be mixed within a cell-type region. Islands that
 > follow study boundaries are under-correction. Harmony adjusts the
@@ -245,10 +231,8 @@ Fitting `sccomp` on `sce_qc` would estimate the subsample.
 ## The same cells as a Seurat object
 
 [`get_seurat()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_seurat.html)
-is
-[`get_single_cell_experiment()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_single_cell_experiment.html)
-followed by the Seurat conversion. Pass a small metadata table. A
-handful of cells spread across many files downloads a handful of files.
+reads the count matrices for the cells in the queried metadata table and
+returns a `Seurat` object.
 
 ``` r
 
@@ -264,27 +248,27 @@ seurat_demo <- one_study |>
 seurat_demo
 ```
 
-    ## # A Seurat-tibble abstraction: 100 x 50
+    ## # A Seurat-tibble abstraction: 100 × 50
     ## # Features=33145 | Cells=100 | Active assay=counts | Assays=counts
     ##    .cell  orig.ident  nCount_originalexp nFeature_originalexp observation_joinid
     ##    <chr>  <fct>                    <dbl>                <int> <chr>             
-    ##  1 495_1  SeuratProj~              9963.                  426 )>te!b8pEJ        
-    ##  2 569_2  SeuratProj~              9985.                  566 %=xI5jRY4?        
-    ##  3 924_3  SeuratProj~              9974.                 1531 !`&!Q3~>-J        
-    ##  4 913_3  SeuratProj~              9961.                 1771 $xhxN?oF#O        
-    ##  5 899_3  SeuratProj~              9975.                 2122 $|c|J0Wj}b        
-    ##  6 909_3  SeuratProj~              9954.                 1008 %E}fsQ09Os        
-    ##  7 902_3  SeuratProj~              9953.                 1700 *^ZXM4fn=C        
-    ##  8 921_3  SeuratProj~              9976.                 2089 +}>sX{6y5h        
-    ##  9 2273_4 SeuratProj~             10000.                  519 !2%6tGB!1M        
-    ## 10 2418_4 SeuratProj~              9970.                  548 #hf4{^>7WI        
-    ## # i 90 more rows
-    ## # i 45 more variables: dataset_id <chr>, sample_id <chr>, donor_id <chr>,
+    ##  1 495_1  SeuratProj…              9963.                  426 )>te!b8pEJ        
+    ##  2 569_2  SeuratProj…              9985.                  566 %=xI5jRY4?        
+    ##  3 924_3  SeuratProj…              9974.                 1531 !`&!Q3~>-J        
+    ##  4 913_3  SeuratProj…              9961.                 1771 $xhxN?oF#O        
+    ##  5 899_3  SeuratProj…              9975.                 2122 $|c|J0Wj}b        
+    ##  6 909_3  SeuratProj…              9954.                 1008 %E}fsQ09Os        
+    ##  7 902_3  SeuratProj…              9953.                 1700 *^ZXM4fn=C        
+    ##  8 921_3  SeuratProj…              9976.                 2089 +}>sX{6y5h        
+    ##  9 2273_4 SeuratProj…             10000.                  519 !2%6tGB!1M        
+    ## 10 2418_4 SeuratProj…              9970.                  548 #hf4{^>7WI        
+    ## # ℹ 90 more rows
+    ## # ℹ 45 more variables: dataset_id <chr>, sample_id <chr>, donor_id <chr>,
     ## #   feature_count <int>, age_days <int>, nFeature_expressed_in_sample <int>,
     ## #   nCount_RNA <dbl>, empty_droplet <lgl>, cell_type_unified_ensemble <chr>,
     ## #   is_immune <lgl>, subsets_Mito_percent <int>, subsets_Ribo_percent <int>,
     ## #   high_mitochondrion <lgl>, high_ribosome <lgl>, alive <lgl>,
-    ## #   scDblFinder.class <chr>, file_id_cellNexus_single_cell <chr>, ...
+    ## #   scDblFinder.class <chr>, file_id_cellNexus_single_cell <chr>, …
 
 `tidyseurat` gives that object the same tibble interface you just used
 on the SingleCellExperiment. The rest of the workshop stays with

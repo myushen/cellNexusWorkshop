@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>Solutions • cellNexusWorkshop</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Solutions">
 </head>
@@ -156,17 +156,6 @@ stored as character with <code>"FALSE"</code> first.</p>
 <div class="section level2">
 <h2 id="exercise-7">Exercise 7<a class="anchor" aria-label="anchor" href="#exercise-7"></a>
 </h2>
-<p>Epithelial, pneumocyte, and secretory labels are left out so the
-proportions are shares of the immune compartment. Dissociation
-efficiency changes epithelial yield from study to study, and that
-technical shift would move every immune proportion. Adding the
-epithelial labels back answers a different question: change in share
-among immune and epithelial cells together. Report the label set with
-the effects.</p>
-</div>
-<div class="section level2">
-<h2 id="exercise-8">Exercise 8<a class="anchor" aria-label="anchor" href="#exercise-8"></a>
-</h2>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">epi_cluster_de_top</span></span>
 <span><span class="va">epi_cluster_screen</span><span class="op">$</span><span class="va">screen</span></span></code></pre></div>
@@ -176,7 +165,7 @@ of pseudobulk profiles. Quote <code>n_datasets_spanning_age</code> for
 that row. A value of 1 means the age term rests on a single study.</p>
 </div>
 <div class="section level2">
-<h2 id="exercise-9">Exercise 9<a class="anchor" aria-label="anchor" href="#exercise-9"></a>
+<h2 id="exercise-8">Exercise 8<a class="anchor" aria-label="anchor" href="#exercise-8"></a>
 </h2>
 <p><code>c("age_binary", "old", "young")</code> tests old against young.
 Positive <code>log2FoldChange</code> means higher abundance in donors
@@ -195,7 +184,7 @@ levels and the contrast disagree.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>

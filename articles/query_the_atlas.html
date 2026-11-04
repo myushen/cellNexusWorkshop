@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>1. Query the atlas • cellNexusWorkshop</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="1. Query the atlas">
 </head>
@@ -66,16 +66,15 @@
     
     
 <p>This page is the script for the first block. Run the code in your R
-session, in order. The figures on this site come from a larger example
-run, so your own plots can differ when you use the smaller download used
-in the session.</p>
-<p>This article takes Human Cell Atlas data from CELLxGENE. Each study
-is a table of measurements, with one row per cell. cellNexus makes that
-query reusable and fast at the sample level. It also adds three
-cell-type labels with SingleR, using the Blueprint, Monaco, and Azimuth
-references. A harmonisation step then combines those three labels into
-one unified cell-type label for every cell. The diagram below shows that
-preprocessing, starting from the original CELLxGENE data.</p>
+session, in order.</p>
+<p>This practice takes Human Cell Atlas data from CELLxGENE. Each study
+is a table of measurements at single cell level (one row per cell).
+cellNexus makes that query reusable and fast at the sample level. It
+also adds three cell-type labels with SingleR, using the Blueprint,
+Monaco, and Azimuth references. A harmonisation step then combines those
+three labels into one unified cell-type label for every cell. The
+diagram below shows the preprocessing steps, starting from the original
+CELLxGENE data.</p>
 <p><img src="images/abstract.png" class="r-plt" alt="" width="420" style="display: block; margin: auto auto auto 0;"></p>
 <div class="section level2">
 <h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
@@ -94,27 +93,27 @@ atlas of this size practical to subset.</p>
 <span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">metadata</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A query:  ?? x 33</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># Database: DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># Source:   SQL [?? x 33]</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># Database: DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]</span></span></span>
 <span><span class="co">##    cell_id observation_joinid dataset_id        sample_id donor_id feature_count</span></span>
 <span><span class="co">##      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 1</span>    <span style="text-decoration: underline;">7</span>951 V^DVv&amp;wmix         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 2</span>   <span style="text-decoration: underline;">10</span>537 +P10$OJbtq         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 3</span>    <span style="text-decoration: underline;">4</span>681 `rtxaAa~)4         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 4</span>   <span style="text-decoration: underline;">10</span>538 YTZT;WA*H1         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 5</span>   <span style="text-decoration: underline;">11</span>685 q6&amp;?h```1s         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 6</span>   <span style="text-decoration: underline;">10</span>539 {Ij`DT8SD?         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 7</span>    <span style="text-decoration: underline;">4</span>682 s1e`j)^y54         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 8</span>    <span style="text-decoration: underline;">4</span>683 0G5XsAaJ&amp;m         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 9</span>   <span style="text-decoration: underline;">10</span>540 GPsK`oVmW=         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">10</span>   <span style="text-decoration: underline;">10</span>541 &lt;iPo(ac}Y)         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
-<span><span class="co">## <span style="color: #949494;"># i more rows</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># i 27 more variables: age_days &lt;int&gt;, nFeature_expressed_in_sample &lt;int&gt;,</span></span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span>    <span style="text-decoration: underline;">7</span>951 V^DVv&amp;wmix         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span>   <span style="text-decoration: underline;">10</span>537 +P10$OJbtq         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span>    <span style="text-decoration: underline;">4</span>681 `rtxaAa~)4         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span>   <span style="text-decoration: underline;">10</span>538 YTZT;WA*H1         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span>   <span style="text-decoration: underline;">11</span>685 q6&amp;?h```1s         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span>   <span style="text-decoration: underline;">10</span>539 {Ij`DT8SD?         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span>    <span style="text-decoration: underline;">4</span>682 s1e`j)^y54         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span>    <span style="text-decoration: underline;">4</span>683 0G5XsAaJ&amp;m         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span>   <span style="text-decoration: underline;">10</span>540 GPsK`oVmW=         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span>   <span style="text-decoration: underline;">10</span>541 &lt;iPo(ac}Y)         ca46ffe6-0a26-4d… 86fbf754… Hs254            <span style="text-decoration: underline;">28</span>675</span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ more rows</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 27 more variables: age_days &lt;int&gt;, nFeature_expressed_in_sample &lt;int&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   nCount_RNA &lt;dbl&gt;, empty_droplet &lt;lgl&gt;, cell_type_unified_ensemble &lt;chr&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   is_immune &lt;lgl&gt;, subsets_Mito_percent &lt;int&gt;, subsets_Ribo_percent &lt;int&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   high_mitochondrion &lt;lgl&gt;, high_ribosome &lt;lgl&gt;, alive &lt;lgl&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   scDblFinder.class &lt;chr&gt;, file_id_cellNexus_single_cell &lt;chr&gt;,</span></span></span>
-<span><span class="co">## <span style="color: #949494;">#   file_id_cellNexus_pseudobulk &lt;chr&gt;, count_upper_bound &lt;dbl&gt;, ...</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #949494;">#   file_id_cellNexus_pseudobulk &lt;chr&gt;, count_upper_bound &lt;dbl&gt;, …</span></span></span></code></pre>
 <p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells()</a></code> applies one gate and filters out
 bad quality cells from every sample.</p>
 <p><img src="images/quality-control.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto auto auto 0;"></p>
@@ -138,15 +137,14 @@ quality-control steps</a>.</p>
 </h2>
 <p><code>cell_type_unified_ensemble</code> is the harmonised label
 (multi-reference consensus annotation). <code>age_days</code> and
-<code>imputed_ethnicity</code> are sample-level fields that travel with
-every cell.</p>
+<code>imputed_ethnicity</code> are sample-level fields.</p>
 <p>Exploring the harmonised cell types in the atlas.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A query:    ?? x 1</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># Source:     SQL [?? x 1]</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]</span></span></span>
 <span><span class="co">## <span style="color: #949494;"># Ordered by: cell_type_unified_ensemble</span></span></span>
 <span><span class="co">##    cell_type_unified_ensemble</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                     </span></span>
@@ -160,7 +158,7 @@ every cell.</p>
 <span><span class="co">## <span style="color: #BCBCBC;"> 8</span> cd14 mono                 </span></span>
 <span><span class="co">## <span style="color: #BCBCBC;"> 9</span> cd16 mono                 </span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">10</span> cd4 fh em                 </span></span>
-<span><span class="co">## <span style="color: #949494;"># i more rows</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #949494;"># ℹ more rows</span></span></span></code></pre>
 <p>Filtering the atlas by epithelial cells and exploring the imputed
 ethnicities of the donors.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
@@ -168,8 +166,8 @@ ethnicities of the donors.</p>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span> <span class="op">==</span> <span class="st">"epithelial"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">donor_id</span>, <span class="va">imputed_ethnicity</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">imputed_ethnicity</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A query:    ?? x 2</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># Source:     SQL [?? x 2]</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]</span></span></span>
 <span><span class="co">## <span style="color: #949494;"># Ordered by: desc(n)</span></span></span>
 <span><span class="co">##    imputed_ethnicity              n</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -183,7 +181,7 @@ ethnicities of the donors.</p>
 <span><span class="co">## <span style="color: #BCBCBC;"> 8</span> Hispanic or Latin American    26</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;"> 9</span> Hispanic/Latin American       15</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">10</span> British                       14</span></span>
-<span><span class="co">## <span style="color: #949494;"># i more rows</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #949494;"># ℹ more rows</span></span></span></code></pre>
 <blockquote>
 <p><strong>Exercise 1.</strong> Count cells per
 <code>cell_type_unified_ensemble</code> for donors older than 50 years
@@ -203,12 +201,11 @@ Solution
 <p>A label with a few dozen cells across the whole atlas will have a
 very wide composition interval. Drop it from the cell-type list, or
 accept that its estimate is descriptive.</p>
-</details>
-</div>
-<div class="section level2">
-<h2 id="choose-cells-by-tissue">Choose cells by tissue<a class="anchor" aria-label="anchor" href="#choose-cells-by-tissue"></a>
-</h2>
-<p>This case study uses nine respiratory reference studies.</p>
+</details><p>This case study uses nine respiratory reference studies in
+particular. <code><a href="../reference/join_census_tissue.html">join_census_tissue()</a></code> appends CELLxGENE Census
+demographic annotations such as <code>tissue</code>,
+<code>disease</code>, <code>sex</code>, <code>age_days</code>, etc to
+the metadata.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/respiratory_dataset_ids.html">respiratory_dataset_ids</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## [1] "9f222629-9e39-47d0-b83f-e08d610c7479"</span></span>
@@ -220,60 +217,43 @@ accept that its estimate is descriptive.</p>
 <span><span class="co">## [7] "e04daea4-4412-45b5-989e-76a9be070a89"</span></span>
 <span><span class="co">## [8] "2adb1f8a-a6b1-4909-8ee8-484814e2d4bf"</span></span>
 <span><span class="co">## [9] "2672b679-8048-4f5e-9786-f1b196ccfd08"</span></span></code></pre>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/respiratory_dataset_ids.html">respiratory_dataset_ids</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">metadata</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">dataset_id</span> <span class="op"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">%in%</a></span> <span class="va">dataset_ids</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">dataset_id</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A query:  ?? x 1</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># Database: DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]</span></span></span>
-<span><span class="co">##       n</span></span>
-<span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">1</span>     9</span></span></code></pre>
-<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata()</a></code> does not carry a tissue label.
-<code><a href="../reference/join_census_tissue.html">join_census_tissue()</a></code> attaches the CELLxGENE Census
-<code>tissue</code> for each cell. <code><a href="../reference/annotate_cell_nexus.html">annotate_cell_nexus()</a></code>
-then maps those labels onto <code>"respiratory system"</code> (lung,
-airway, pleura, and the lobe names) and keeps that group. The nine
-<code>dataset_id</code>s still pin which studies can enter. The tissue
-map drops a non-respiratory cell if one of those studies contains
-one.</p>
 </div>
 <div class="section level2">
-<h2 id="choose-cells-by-disease">Choose cells by disease<a class="anchor" aria-label="anchor" href="#choose-cells-by-disease"></a>
+<h2 id="query-metadata-by-tissue">Query metadata by tissue<a class="anchor" aria-label="anchor" href="#query-metadata-by-tissue"></a>
 </h2>
-<p>Disease lives on the same Census table.
-<code><a href="../reference/join_census_tissue.html">join_census_tissue()</a></code> attaches it together with
-<code>tissue</code>. Count disease on the nine studies before building
-the cohort. Joining the whole atlas is a large download, so this call
-stays inside the study filter.</p>
-<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_atlas_versions.html" class="external-link">get_atlas_versions()</a></code> tells you which Census snapshot the
-atlas was built from. <code><a href="../reference/join_census_tissue.html">join_census_tissue()</a></code> defaults to
-Census <code>2024-07-01</code>. Pass <code>census_version</code> when
-your <code>atlas_id</code> was built from another snapshot.</p>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_atlas_versions.html" class="external-link">get_atlas_versions</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 7 x 6</span></span></span>
-<span><span class="co">##   atlas_id          census_version change_type description modified_at container</span></span>
-<span><span class="co">##   <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>          <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>       <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>    </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">1</span> cellxgene_2024/0~ 01-07-2024     initial     Initial re~ 2026-03-26  cellNexu~</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">2</span> hta_2025/0.1.0    21-10-2025     initial     Initial re~ 2026-03-26  cellNexu~</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">3</span> cellxgene_2024/0~ 01-07-2024     minor       Changed fi~ 2026-04-16  cellNexu~</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">4</span> cellxgene_2024/0~ 01-07-2024     bug         Fixed cell~ 2026-04-21  cellNexu~</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">5</span> cellxgene_2024/0~ 01-07-2024     minor       Updated tr~ 2026-05-26  cellNexu~</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">6</span> hca_2024/0.4.1    01-07-2024     minor       Updated th~ 2026-07-22  cellNexu~</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">7</span> hca_2024/0.5.0    01-07-2024     minor       Updated tr~ 2026-09-09  <span style="color: #BB0000;">NA</span></span></span></code></pre>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/respiratory_dataset_ids.html">respiratory_dataset_ids</a></span><span class="op">(</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">metadata</span> <span class="op">|&gt;</span></span>
+<span><span class="va">metadata_respiratory</span> <span class="op">&lt;-</span> <span class="va">metadata</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">dataset_id</span> <span class="op"><a href="https://rdrr.io/pkg/BiocGenerics/man/match.html" class="external-link">%in%</a></span> <span class="va">dataset_ids</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/join_census_tissue.html">join_census_tissue</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/join_census_tissue.html">join_census_tissue</a></span><span class="op">(</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">metadata_respiratory</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">tissue</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<pre><code><span><span class="co">## <span style="color: #949494;"># Source:     SQL [?? x 2]</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># Ordered by: desc(n)</span></span></span>
+<span><span class="co">##    tissue                        n</span></span>
+<span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> lung                    1<span style="text-decoration: underline;">453</span>396</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> lung parenchyma          <span style="text-decoration: underline;">306</span>390</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> respiratory airway       <span style="text-decoration: underline;">267</span>309</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> nose                     <span style="text-decoration: underline;">105</span>067</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> blood                     <span style="text-decoration: underline;">64</span>404</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> kidney                    <span style="text-decoration: underline;">53</span>946</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> spleen                    <span style="text-decoration: underline;">43</span>999</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> trachea                   <span style="text-decoration: underline;">43</span>708</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> adrenal gland             <span style="text-decoration: underline;">43</span>160</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span> lower lobe of left lung   <span style="text-decoration: underline;">42</span>510</span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ more rows</span></span></span></code></pre>
+</div>
+<div class="section level2">
+<h2 id="query-metadata-by-disease">Query metadata by disease<a class="anchor" aria-label="anchor" href="#query-metadata-by-disease"></a>
+</h2>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">metadata_respiratory</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">disease</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A query:    ?? x 2</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># Source:     SQL [?? x 2]</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]</span></span></span>
 <span><span class="co">## <span style="color: #949494;"># Ordered by: desc(n)</span></span></span>
 <span><span class="co">##    disease                                     n</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                                   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
@@ -297,17 +277,11 @@ your <code>atlas_id</code> was built from another snapshot.</p>
 <div class="section level2">
 <h2 id="build-the-respiratory-ageing-cohort">Build the respiratory ageing cohort<a class="anchor" aria-label="anchor" href="#build-the-respiratory-ageing-cohort"></a>
 </h2>
-<p>Composition uses the immune labels. Expression uses the epithelial
-labels. Both sets are queried together and split later. Age is
-restricted to donors from 1 year up to 80 years, which drops perinatal
-samples and donors who would fall outside the age bins.</p>
-<p>The donor is the replicate. Cells from one donor share genotype,
-processing, and library preparation. A test that treats cells as
-independent replicates reports a sample size equal to the number of
-cells <span class="citation">(Squair et al. 2021)</span>.</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/respiratory_dataset_ids.html">respiratory_dataset_ids</a></span><span class="op">(</span><span class="op">)</span></span>
-<span><span class="va">cell_types_query</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="../reference/immune_cell_types.html">immune_cell_types</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="../reference/epithelial_cell_types.html">epithelial_cell_types</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<p>Immune and epithelial cell types are queried. Age is restricted to
+donors from 1 year up to 80 years, which drops perinatal samples and
+donors who would fall outside the age bins.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">cell_types_query</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="../reference/immune_cell_types.html">immune_cell_types</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="../reference/epithelial_cell_types.html">epithelial_cell_types</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">obs_lung</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -323,7 +297,7 @@ cells <span class="citation">(Squair et al. 2021)</span>.</p>
 <span><span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, name <span class="op">=</span> <span class="st">"n_cells"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">n_cells</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 29 x 2</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 29 × 2</span></span></span>
 <span><span class="co">##    cell_type_unified_ensemble n_cells</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
 <span><span class="co">## <span style="color: #BCBCBC;"> 1</span> macrophage                  <span style="text-decoration: underline;">196</span>975</span></span>
@@ -336,7 +310,7 @@ cells <span class="citation">(Squair et al. 2021)</span>.</p>
 <span><span class="co">## <span style="color: #BCBCBC;"> 8</span> plasma                       <span style="text-decoration: underline;">23</span>810</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;"> 9</span> cdc                          <span style="text-decoration: underline;">13</span>773</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">10</span> mast                         <span style="text-decoration: underline;">13</span>578</span></span>
-<span><span class="co">## <span style="color: #949494;"># i 19 more rows</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #949494;"># ℹ 19 more rows</span></span></span></code></pre>
 <p><code><a href="../reference/join_census_tissue.html">join_census_tissue()</a></code> attaches Census
 <code>tissue</code>. <code><a href="../reference/annotate_cell_nexus.html">annotate_cell_nexus()</a></code> keeps the
 respiratory labels, collects the query, derives the age variables, drops
@@ -350,10 +324,6 @@ years. <code>age_bin</code> is the same split, labelled for plots. One
 encoding means the composition model and the expression model contrast
 the same donors. The boundary is a modelling choice: report it, and
 check that both sides are populated.</p>
-<p><code>dataset_id</code> values are rewritten with underscores.
-Hyphens in a UUID become illegal coefficient names in limma. The filter
-above still uses the hyphenated identifiers, because it runs before that
-rewrite.</p>
 </div>
 <div class="section level2">
 <h2 id="inspect-the-cohort-before-modelling">Inspect the cohort before modelling<a class="anchor" aria-label="anchor" href="#inspect-the-cohort-before-modelling"></a>
@@ -363,7 +333,7 @@ a model. Both age classes should contain donors. Ages clumped into two
 distant groups will make a continuous age slope rest on whichever
 studies sit at the extremes. A cell type with only a handful of cells
 will have an uninformative composition interval.</p>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p_age</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">age_years</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">age_years</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
@@ -379,19 +349,13 @@ will have an uninformative composition interval.</p>
 <span></span>
 <span><span class="va">p_age</span> <span class="op">+</span> <span class="va">p_types</span> <span class="op">&amp;</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p><img src="query_the_atlas_files/figure-html/manifest-plot-1.png" class="r-plt" alt="" width="700"></p>
-<div class="figure">
-<img src="images/manifest-plot.png" class="r-plt" alt="Example cohort. Left: one bar per sample age. Right: cells per harmonised label." width="672"><p class="caption">
-Example cohort. Left: one bar per sample age. Right: cells per
-harmonised label.
-</p>
-</div>
 <blockquote>
 <p><strong>Exercise 2.</strong> How many distinct samples fall in each
 <code>age_bin</code>?</p>
 </blockquote>
 <details><summary>
 Solution
-</summary><div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+</summary><div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">age_bin</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">age_bin</span><span class="op">)</span></span></code></pre></div>
@@ -407,7 +371,7 @@ cannot separate age from study, and both models below include
 </blockquote>
 <details><summary>
 Solution
-</summary><div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+</summary><div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">dataset_id</span>, <span class="va">age_binary</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">dataset_id</span>, <span class="va">age_binary</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -431,7 +395,7 @@ visualise</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>

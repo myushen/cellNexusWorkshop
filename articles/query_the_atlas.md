@@ -1,17 +1,16 @@
 # 1. Query the atlas
 
 This page is the script for the first block. Run the code in your R
-session, in order. The figures on this site come from a larger example
-run, so your own plots can differ when you use the smaller download used
-in the session.
+session, in order.
 
-This article takes Human Cell Atlas data from CELLxGENE. Each study is a
-table of measurements, with one row per cell. cellNexus makes that query
-reusable and fast at the sample level. It also adds three cell-type
-labels with SingleR, using the Blueprint, Monaco, and Azimuth
-references. A harmonisation step then combines those three labels into
-one unified cell-type label for every cell. The diagram below shows that
-preprocessing, starting from the original CELLxGENE data.
+This practice takes Human Cell Atlas data from CELLxGENE. Each study is
+a table of measurements at single cell level (one row per cell).
+cellNexus makes that query reusable and fast at the sample level. It
+also adds three cell-type labels with SingleR, using the Blueprint,
+Monaco, and Azimuth references. A harmonisation step then combines those
+three labels into one unified cell-type label for every cell. The
+diagram below shows the preprocessing steps, starting from the original
+CELLxGENE data.
 
 ![](images/abstract.png)
 
@@ -39,27 +38,27 @@ metadata <- get_metadata() |>
 metadata
 ```
 
-    ## # A query:  ?? x 33
-    ## # Database: DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]
+    ## # Source:   SQL [?? x 33]
+    ## # Database: DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
     ##    cell_id observation_joinid dataset_id        sample_id donor_id feature_count
     ##      <dbl> <chr>              <chr>             <chr>     <chr>            <int>
-    ##  1    7951 V^DVv&wmix         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  2   10537 +P10$OJbtq         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  3    4681 `rtxaAa~)4         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  4   10538 YTZT;WA*H1         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  5   11685 q6&?h```1s         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  6   10539 {Ij`DT8SD?         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  7    4682 s1e`j)^y54         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  8    4683 0G5XsAaJ&m         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ##  9   10540 GPsK`oVmW=         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ## 10   10541 <iPo(ac}Y)         ca46ffe6-0a26-4d~ 86fbf754~ Hs254            28675
-    ## # i more rows
-    ## # i 27 more variables: age_days <int>, nFeature_expressed_in_sample <int>,
+    ##  1    7951 V^DVv&wmix         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  2   10537 +P10$OJbtq         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  3    4681 `rtxaAa~)4         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  4   10538 YTZT;WA*H1         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  5   11685 q6&?h```1s         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  6   10539 {Ij`DT8SD?         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  7    4682 s1e`j)^y54         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  8    4683 0G5XsAaJ&m         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ##  9   10540 GPsK`oVmW=         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ## 10   10541 <iPo(ac}Y)         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
+    ## # ℹ more rows
+    ## # ℹ 27 more variables: age_days <int>, nFeature_expressed_in_sample <int>,
     ## #   nCount_RNA <dbl>, empty_droplet <lgl>, cell_type_unified_ensemble <chr>,
     ## #   is_immune <lgl>, subsets_Mito_percent <int>, subsets_Ribo_percent <int>,
     ## #   high_mitochondrion <lgl>, high_ribosome <lgl>, alive <lgl>,
     ## #   scDblFinder.class <chr>, file_id_cellNexus_single_cell <chr>,
-    ## #   file_id_cellNexus_pseudobulk <chr>, count_upper_bound <dbl>, ...
+    ## #   file_id_cellNexus_pseudobulk <chr>, count_upper_bound <dbl>, …
 
 [`keep_quality_cells()`](https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html)
 applies one gate and filters out bad quality cells from every sample.
@@ -81,7 +80,7 @@ steps](https://cellnexus.org/#quality-control-steps).
 
 `cell_type_unified_ensemble` is the harmonised label (multi-reference
 consensus annotation). `age_days` and `imputed_ethnicity` are
-sample-level fields that travel with every cell.
+sample-level fields.
 
 Exploring the harmonised cell types in the atlas.
 
@@ -92,8 +91,8 @@ metadata |>
   dplyr::arrange(cell_type_unified_ensemble)
 ```
 
-    ## # A query:    ?? x 1
-    ## # Database:   DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]
+    ## # Source:     SQL [?? x 1]
+    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: cell_type_unified_ensemble
     ##    cell_type_unified_ensemble
     ##    <chr>                     
@@ -107,7 +106,7 @@ metadata |>
     ##  8 cd14 mono                 
     ##  9 cd16 mono                 
     ## 10 cd4 fh em                 
-    ## # i more rows
+    ## # ℹ more rows
 
 Filtering the atlas by epithelial cells and exploring the imputed
 ethnicities of the donors.
@@ -120,8 +119,8 @@ metadata |>
   dplyr::count(imputed_ethnicity, sort = TRUE)
 ```
 
-    ## # A query:    ?? x 2
-    ## # Database:   DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]
+    ## # Source:     SQL [?? x 2]
+    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: desc(n)
     ##    imputed_ethnicity              n
     ##    <chr>                      <dbl>
@@ -135,7 +134,7 @@ metadata |>
     ##  8 Hispanic or Latin American    26
     ##  9 Hispanic/Latin American       15
     ## 10 British                       14
-    ## # i more rows
+    ## # ℹ more rows
 
 > **Exercise 1.** Count cells per `cell_type_unified_ensemble` for
 > donors older than 50 years (`age_days > 50 * 365`). Which labels are
@@ -159,9 +158,10 @@ A label with a few dozen cells across the whole atlas will have a very
 wide composition interval. Drop it from the cell-type list, or accept
 that its estimate is descriptive.
 
-## Choose cells by tissue
-
-This case study uses nine respiratory reference studies.
+This case study uses nine respiratory reference studies in particular.
+[`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
+appends CELLxGENE Census demographic annotations such as `tissue`,
+`disease`, `sex`, `age_days`, etc to the metadata.
 
 ``` r
 
@@ -178,74 +178,46 @@ respiratory_dataset_ids()
     ## [8] "2adb1f8a-a6b1-4909-8ee8-484814e2d4bf"
     ## [9] "2672b679-8048-4f5e-9786-f1b196ccfd08"
 
-``` r
-
-dataset_ids <- respiratory_dataset_ids()
-
-metadata |>
-  dplyr::filter(dataset_id %in% dataset_ids) |>
-  dplyr::distinct(dataset_id) |>
-  dplyr::count()
-```
-
-    ## # A query:  ?? x 1
-    ## # Database: DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]
-    ##       n
-    ##   <dbl>
-    ## 1     9
-
-[`get_metadata()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html)
-does not carry a tissue label.
-[`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
-attaches the CELLxGENE Census `tissue` for each cell.
-[`annotate_cell_nexus()`](https://myushen.github.io/cellNexusWorkshop/reference/annotate_cell_nexus.md)
-then maps those labels onto `"respiratory system"` (lung, airway,
-pleura, and the lobe names) and keeps that group. The nine `dataset_id`s
-still pin which studies can enter. The tissue map drops a
-non-respiratory cell if one of those studies contains one.
-
-## Choose cells by disease
-
-Disease lives on the same Census table.
-[`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
-attaches it together with `tissue`. Count disease on the nine studies
-before building the cohort. Joining the whole atlas is a large download,
-so this call stays inside the study filter.
-
-[`get_atlas_versions()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_atlas_versions.html)
-tells you which Census snapshot the atlas was built from.
-[`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
-defaults to Census `2024-07-01`. Pass `census_version` when your
-`atlas_id` was built from another snapshot.
-
-``` r
-
-get_atlas_versions()
-```
-
-    ## # A tibble: 7 x 6
-    ##   atlas_id          census_version change_type description modified_at container
-    ##   <chr>             <chr>          <chr>       <chr>       <chr>       <chr>    
-    ## 1 cellxgene_2024/0~ 01-07-2024     initial     Initial re~ 2026-03-26  cellNexu~
-    ## 2 hta_2025/0.1.0    21-10-2025     initial     Initial re~ 2026-03-26  cellNexu~
-    ## 3 cellxgene_2024/0~ 01-07-2024     minor       Changed fi~ 2026-04-16  cellNexu~
-    ## 4 cellxgene_2024/0~ 01-07-2024     bug         Fixed cell~ 2026-04-21  cellNexu~
-    ## 5 cellxgene_2024/0~ 01-07-2024     minor       Updated tr~ 2026-05-26  cellNexu~
-    ## 6 hca_2024/0.4.1    01-07-2024     minor       Updated th~ 2026-07-22  cellNexu~
-    ## 7 hca_2024/0.5.0    01-07-2024     minor       Updated tr~ 2026-09-09  NA
+## Query metadata by tissue
 
 ``` r
 
 dataset_ids <- respiratory_dataset_ids()
-
-metadata |>
+metadata_respiratory <- metadata |>
   dplyr::filter(dataset_id %in% dataset_ids) |>
-  join_census_tissue() |>
+  join_census_tissue()
+
+metadata_respiratory |>
+  dplyr::count(tissue, sort = TRUE)
+```
+
+    ## # Source:     SQL [?? x 2]
+    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
+    ## # Ordered by: desc(n)
+    ##    tissue                        n
+    ##    <chr>                     <dbl>
+    ##  1 lung                    1453396
+    ##  2 lung parenchyma          306390
+    ##  3 respiratory airway       267309
+    ##  4 nose                     105067
+    ##  5 blood                     64404
+    ##  6 kidney                    53946
+    ##  7 spleen                    43999
+    ##  8 trachea                   43708
+    ##  9 adrenal gland             43160
+    ## 10 lower lobe of left lung   42510
+    ## # ℹ more rows
+
+## Query metadata by disease
+
+``` r
+
+metadata_respiratory |>
   dplyr::count(disease, sort = TRUE)
 ```
 
-    ## # A query:    ?? x 2
-    ## # Database:   DuckDB 1.5.5 [shen.m@Darwin 25.6.0:R 4.6.1/:memory:]
+    ## # Source:     SQL [?? x 2]
+    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: desc(n)
     ##    disease                                     n
     ##    <chr>                                   <dbl>
@@ -268,19 +240,12 @@ metadata |>
 
 ## Build the respiratory ageing cohort
 
-Composition uses the immune labels. Expression uses the epithelial
-labels. Both sets are queried together and split later. Age is
-restricted to donors from 1 year up to 80 years, which drops perinatal
-samples and donors who would fall outside the age bins.
-
-The donor is the replicate. Cells from one donor share genotype,
-processing, and library preparation. A test that treats cells as
-independent replicates reports a sample size equal to the number of
-cells (Squair et al. 2021).
+Immune and epithelial cell types are queried. Age is restricted to
+donors from 1 year up to 80 years, which drops perinatal samples and
+donors who would fall outside the age bins.
 
 ``` r
 
-dataset_ids <- respiratory_dataset_ids()
 cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
 
 obs_lung <- get_metadata() |>
@@ -299,7 +264,7 @@ obs_lung |>
   dplyr::arrange(dplyr::desc(n_cells))
 ```
 
-    ## # A tibble: 29 x 2
+    ## # A tibble: 29 × 2
     ##    cell_type_unified_ensemble n_cells
     ##    <chr>                        <int>
     ##  1 macrophage                  196975
@@ -312,7 +277,7 @@ obs_lung |>
     ##  8 plasma                       23810
     ##  9 cdc                          13773
     ## 10 mast                         13578
-    ## # i 19 more rows
+    ## # ℹ 19 more rows
 
 [`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
 attaches Census `tissue`.
@@ -328,10 +293,6 @@ throw away precision.
 same split, labelled for plots. One encoding means the composition model
 and the expression model contrast the same donors. The boundary is a
 modelling choice: report it, and check that both sides are populated.
-
-`dataset_id` values are rewritten with underscores. Hyphens in a UUID
-become illegal coefficient names in limma. The filter above still uses
-the hyphenated identifiers, because it runs before that rewrite.
 
 ## Inspect the cohort before modelling
 
@@ -360,12 +321,6 @@ p_age + p_types & theme_bw()
 ```
 
 ![](query_the_atlas_files/figure-html/manifest-plot-1.png)
-
-![Example cohort. Left: one bar per sample age. Right: cells per
-harmonised label.](images/manifest-plot.png)
-
-Example cohort. Left: one bar per sample age. Right: cells per
-harmonised label.
 
 > **Exercise 2.** How many distinct samples fall in each `age_bin`?
 

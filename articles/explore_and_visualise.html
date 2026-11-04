@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>2. Explore and visualise • cellNexusWorkshop</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="2. Explore and visualise">
 </head>
@@ -66,7 +66,7 @@
     
     
 <p>Continue in the session from <a href="query_the_atlas.html">Query the
-atlas</a>. This block downloads a capped SingleCellExperiment, checks
+atlas</a>. This block downloads a SingleCellExperiment object, checks
 that immune and epithelial cells separate, and shows the same cells as a
 Seurat object.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -77,7 +77,7 @@ Seurat object.</p>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="http://bioconductor.org/packages/scater/" class="external-link">scater</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MarioniLab/scran/" class="external-link">scran</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/immunogenomics/harmony" class="external-link">harmony</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/drisso/SingleCellExperiment" class="external-link">SingleCellExperiment</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va">SingleCellExperiment</span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stemangiola/tidySingleCellExperiment" class="external-link">tidySingleCellExperiment</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/exists.html" class="external-link">exists</a></span><span class="op">(</span><span class="st">"obs_lung"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
@@ -98,17 +98,15 @@ Seurat object.</p>
 <h2 id="download-a-singlecellexperiment">Download a SingleCellExperiment<a class="anchor" aria-label="anchor" href="#download-a-singlecellexperiment"></a>
 </h2>
 <p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_single_cell_experiment.html" class="external-link">get_single_cell_experiment()</a></code> reads the count matrices
-for the cells in a metadata table and returns one
-<code>SingleCellExperiment</code>. The workshop cap keeps the download
-inside a session. The example figures on this site use 12,000 cells. Set
-<code>CELLNEXUS_WORKSHOP_MAX_CELLS=12000</code> before this chunk to
-match them.</p>
-<p>Cells are subsampled within sample, and the number of samples is
-capped, so a few large libraries do not dominate the highly variable
-genes.</p>
+for the cells in the queried metadata table and returns one
+<code>SingleCellExperiment</code>.</p>
+<p>In this workshop, cells are subsampled within sample, and the number
+of samples is capped, so a few large libraries do not dominate the
+highly variable genes. It caps the download at 12,000 cells, and one
+sample does not exceed 100 cells.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">max_cells_qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"CELLNEXUS_WORKSHOP_MAX_CELLS"</span>, <span class="st">"4000"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">cells_per_sample_qc</span> <span class="op">&lt;-</span> <span class="fl">80L</span></span>
+<code class="sourceCode R"><span><span class="va">max_cells_qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"CELLNEXUS_WORKSHOP_MAX_CELLS"</span>, <span class="st">"12000"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">cells_per_sample_qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/integer.html" class="external-link">as.integer</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"CELLNEXUS_WORKSHOP_QC_CELLS_PER_SAMPLE"</span>, <span class="st">"100"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">n_samples_qc</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="va">max_cells_qc</span> <span class="op"><a href="https://rdrr.io/r/base/Arithmetic.html" class="external-link">%/%</a></span> <span class="va">cells_per_sample_qc</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">42</span><span class="op">)</span></span>
@@ -126,47 +124,47 @@ genes.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/pkg/scuttle/man/logNormCounts.html" class="external-link">logNormCounts</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sce_qc</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A SingleCellExperiment-tibble abstraction: 11,987 x 46</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #555555;">Features=16315 | Cells=11987 | Assays=counts, logcounts</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A SingleCellExperiment-tibble abstraction: 11,947 × 46</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># </span><span style="color: #555555;">Features=16315 | Cells=11947 | Assays=counts, logcounts</span></span></span>
 <span><span class="co">##    .cell observation_joinid dataset_id sample_id donor_id feature_count age_days</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>              <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>      <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>            <span style="color: #949494; font-style: italic;">&lt;int&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> 29_1  C2v&gt;l0_YWj         2adb1f8a_~ fbd957e8~ Donor23          <span style="text-decoration: underline;">26</span>405    <span style="text-decoration: underline;">16</span>790</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> 699_2 eb&amp;0;%#_?D         093d3bfe_~ 0ce45088~ A40              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">23</span>360</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> 638_2 dK=2kQdg$k         093d3bfe_~ 5b82978f~ A48              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">23</span>542</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> 632_2 VPz4bhv{Kg         093d3bfe_~ 5ee73982~ A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> 645_2 rqQvRvB{Of         093d3bfe_~ 5ee73982~ A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> 650_2 PwHXYWv74~         093d3bfe_~ 5ee73982~ A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> 283_2 3&lt;IN)dSug5         093d3bfe_~ 60197164~ A26              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">27</span>375</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> 288_2 yiwH8cN91Z         093d3bfe_~ 60197164~ A26              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">27</span>375</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> 289_2 vVY?$M0^J8         093d3bfe_~ 60197164~ A26              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">27</span>375</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">10</span> 129_2 cK(Q&gt;qOqbP         093d3bfe_~ 67aafc07~ A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
-<span><span class="co">## <span style="color: #949494;"># i 11,977 more rows</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># i 39 more variables: nFeature_expressed_in_sample &lt;int&gt;, nCount_RNA &lt;dbl&gt;,</span></span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> 480_1 @P1l0E6q;`         093d3bfe_… 162d6dc8… A40              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">23</span>360</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> 478_1 6y{WgEh3&gt;=         093d3bfe_… 2edac3a0… A41              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">19</span>892</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> 844_1 sj#d$bsNrL         093d3bfe_… 4a39d4b0… A32              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">10</span>585</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> 745_1 S{GuMjoYG5         093d3bfe_… 54c9d04d… A44              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">24</span>090</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> 290_1 {Xj8TQ}^_U         093d3bfe_… 60197164… A26              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">27</span>375</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> 293_1 Yei%1e`|FZ         093d3bfe_… 60197164… A26              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">27</span>375</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> 48_1  X&gt;3BUsmnnX         093d3bfe_… 67aafc07… A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> 100_1 91uvjSj6W%         093d3bfe_… 67aafc07… A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> 96_1  {OH`f$Ny|H         093d3bfe_… 67aafc07… A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span> 75_1  O;tcgIpuAR         093d3bfe_… 67aafc07… A37              <span style="text-decoration: underline;">33</span>145    <span style="text-decoration: underline;">21</span>535</span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 11,937 more rows</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 39 more variables: nFeature_expressed_in_sample &lt;int&gt;, nCount_RNA &lt;dbl&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   empty_droplet &lt;lgl&gt;, cell_type_unified_ensemble &lt;chr&gt;, is_immune &lt;lgl&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   subsets_Mito_percent &lt;int&gt;, subsets_Ribo_percent &lt;int&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   high_mitochondrion &lt;lgl&gt;, high_ribosome &lt;lgl&gt;, alive &lt;lgl&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   scDblFinder.class &lt;chr&gt;, file_id_cellNexus_single_cell &lt;chr&gt;,</span></span></span>
-<span><span class="co">## <span style="color: #949494;">#   file_id_cellNexus_pseudobulk &lt;chr&gt;, count_upper_bound &lt;dbl&gt;, ...</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #949494;">#   file_id_cellNexus_pseudobulk &lt;chr&gt;, count_upper_bound &lt;dbl&gt;, …</span></span></span></code></pre>
 <p>With <code>tidySingleCellExperiment</code> loaded, the object prints
 as a tibble and accepts <code>dplyr</code> verbs and
 <code>ggplot2</code>. The underlying assay is unchanged.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sce_qc</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 29 x 2</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A tibble: 29 × 2</span></span></span>
 <span><span class="co">##    cell_type_unified_ensemble     n</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                      <span style="color: #949494; font-style: italic;">&lt;int&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> pneumocyte                  <span style="text-decoration: underline;">2</span>899</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> epithelial                  <span style="text-decoration: underline;">2</span>656</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> macrophage                  <span style="text-decoration: underline;">2</span>378</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> cd14 mono                    653</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> cd8 tem                      582</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> nk                           559</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> secretory                    527</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> plasma                       342</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> cdc                          197</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">10</span> mast                         186</span></span>
-<span><span class="co">## <span style="color: #949494;"># i 19 more rows</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> epithelial                  <span style="text-decoration: underline;">2</span>767</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> pneumocyte                  <span style="text-decoration: underline;">2</span>706</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> macrophage                  <span style="text-decoration: underline;">2</span>466</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> cd14 mono                    604</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> nk                           590</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> secretory                    562</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> cd8 tem                      537</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> plasma                       307</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> mast                         198</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span> cdc                          167</span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 19 more rows</span></span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="integrate-studies-and-colour-by-cd45">Integrate studies and colour by CD45<a class="anchor" aria-label="anchor" href="#integrate-studies-and-colour-by-cd45"></a>
@@ -228,15 +226,6 @@ Example Harmony UMAP, coloured by CD45. Immune cells occupy the
 high-CD45 region and epithelial cells the low-CD45 region.
 </p>
 </div>
-<p>The same grammar colours the embedding by the harmonised label.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sce_qc</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">UMAP1</span>, <span class="va">UMAP2</span>, colour <span class="op">=</span> <span class="va">cell_type_unified_ensemble</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">0.3</span>, alpha <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/coord_fixed.html" class="external-link">coord_equal</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggtheme.html" class="external-link">theme_bw</a></span><span class="op">(</span><span class="op">)</span> <span class="op">+</span></span>
-<span>  <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/labs.html" class="external-link">labs</a></span><span class="op">(</span>colour <span class="op">=</span> <span class="st">"Cell type"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="explore_and_visualise_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="" width="700"></p>
 <blockquote>
 <p><strong>Exercise 4.</strong> Colour the same UMAP by
 <code>dataset_id</code>. After Harmony, study identity should be mixed
@@ -247,7 +236,7 @@ include <code>dataset_id</code>.</p>
 </blockquote>
 <details><summary>
 Solution
-</summary><div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+</summary><div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sce_qc</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/ggplot.html" class="external-link">ggplot</a></span><span class="op">(</span><span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/aes.html" class="external-link">aes</a></span><span class="op">(</span><span class="va">UMAP1</span>, <span class="va">UMAP2</span>, colour <span class="op">=</span> <span class="va">dataset_id</span><span class="op">)</span><span class="op">)</span> <span class="op">+</span></span>
 <span>  <span class="fu">ggplot2</span><span class="fu">::</span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/geom_point.html" class="external-link">geom_point</a></span><span class="op">(</span>size <span class="op">=</span> <span class="fl">0.3</span>, alpha <span class="op">=</span> <span class="fl">0.6</span><span class="op">)</span> <span class="op">+</span></span>
@@ -266,7 +255,7 @@ alone?</p>
 </blockquote>
 <details><summary>
 Solution
-</summary><div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+</summary><div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://myushen.github.io/cellNexusWorkshop">cellNexusWorkshop</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">sce_qc</span> <span class="op">|&gt;</span></span>
@@ -283,11 +272,9 @@ every retained sample. Fitting <code>sccomp</code> on
 <div class="section level2">
 <h2 id="the-same-cells-as-a-seurat-object">The same cells as a Seurat object<a class="anchor" aria-label="anchor" href="#the-same-cells-as-a-seurat-object"></a>
 </h2>
-<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_seurat.html" class="external-link">get_seurat()</a></code> is
-<code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_single_cell_experiment.html" class="external-link">get_single_cell_experiment()</a></code> followed by the Seurat
-conversion. Pass a small metadata table. A handful of cells spread
-across many files downloads a handful of files.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_seurat.html" class="external-link">get_seurat()</a></code> reads the count matrices for the cells in
+the queried metadata table and returns a <code>Seurat</code> object.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/stemangiola/tidyseurat" class="external-link">tidyseurat</a></span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">one_study</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
@@ -298,27 +285,27 @@ across many files downloads a handful of files.</p>
 <span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_seurat.html" class="external-link">get_seurat</a></span><span class="op">(</span>assays <span class="op">=</span> <span class="st">"counts"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">seurat_demo</span></span></code></pre></div>
-<pre><code><span><span class="co">## <span style="color: #949494;"># A Seurat-tibble abstraction: 100 x 50</span></span></span>
+<pre><code><span><span class="co">## <span style="color: #949494;"># A Seurat-tibble abstraction: 100 × 50</span></span></span>
 <span><span class="co">## <span style="color: #949494;"># </span><span style="color: #555555;">Features=33145 | Cells=100 | Active assay=counts | Assays=counts</span></span></span>
 <span><span class="co">##    .cell  orig.ident  nCount_originalexp nFeature_originalexp observation_joinid</span></span>
 <span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;fct&gt;</span>                    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>                <span style="color: #949494; font-style: italic;">&lt;int&gt;</span> <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>             </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> 495_1  SeuratProj~              <span style="text-decoration: underline;">9</span>963.                  426 )&gt;te!b8pEJ        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> 569_2  SeuratProj~              <span style="text-decoration: underline;">9</span>985.                  566 %=xI5jRY4?        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> 924_3  SeuratProj~              <span style="text-decoration: underline;">9</span>974.                 <span style="text-decoration: underline;">1</span>531 !`&amp;!Q3~&gt;-J        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> 913_3  SeuratProj~              <span style="text-decoration: underline;">9</span>961.                 <span style="text-decoration: underline;">1</span>771 $xhxN?oF#O        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> 899_3  SeuratProj~              <span style="text-decoration: underline;">9</span>975.                 <span style="text-decoration: underline;">2</span>122 $|c|J0Wj}b        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> 909_3  SeuratProj~              <span style="text-decoration: underline;">9</span>954.                 <span style="text-decoration: underline;">1</span>008 %E}fsQ09Os        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> 902_3  SeuratProj~              <span style="text-decoration: underline;">9</span>953.                 <span style="text-decoration: underline;">1</span>700 *^ZXM4fn=C        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> 921_3  SeuratProj~              <span style="text-decoration: underline;">9</span>976.                 <span style="text-decoration: underline;">2</span>089 +}&gt;sX{6y5h        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> 2273_4 SeuratProj~             <span style="text-decoration: underline;">10</span>000.                  519 !2%6tGB!1M        </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">10</span> 2418_4 SeuratProj~              <span style="text-decoration: underline;">9</span>970.                  548 #hf4{^&gt;7WI        </span></span>
-<span><span class="co">## <span style="color: #949494;"># i 90 more rows</span></span></span>
-<span><span class="co">## <span style="color: #949494;"># i 45 more variables: dataset_id &lt;chr&gt;, sample_id &lt;chr&gt;, donor_id &lt;chr&gt;,</span></span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> 495_1  SeuratProj…              <span style="text-decoration: underline;">9</span>963.                  426 )&gt;te!b8pEJ        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> 569_2  SeuratProj…              <span style="text-decoration: underline;">9</span>985.                  566 %=xI5jRY4?        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> 924_3  SeuratProj…              <span style="text-decoration: underline;">9</span>974.                 <span style="text-decoration: underline;">1</span>531 !`&amp;!Q3~&gt;-J        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> 913_3  SeuratProj…              <span style="text-decoration: underline;">9</span>961.                 <span style="text-decoration: underline;">1</span>771 $xhxN?oF#O        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> 899_3  SeuratProj…              <span style="text-decoration: underline;">9</span>975.                 <span style="text-decoration: underline;">2</span>122 $|c|J0Wj}b        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> 909_3  SeuratProj…              <span style="text-decoration: underline;">9</span>954.                 <span style="text-decoration: underline;">1</span>008 %E}fsQ09Os        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> 902_3  SeuratProj…              <span style="text-decoration: underline;">9</span>953.                 <span style="text-decoration: underline;">1</span>700 *^ZXM4fn=C        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> 921_3  SeuratProj…              <span style="text-decoration: underline;">9</span>976.                 <span style="text-decoration: underline;">2</span>089 +}&gt;sX{6y5h        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> 2273_4 SeuratProj…             <span style="text-decoration: underline;">10</span>000.                  519 !2%6tGB!1M        </span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span> 2418_4 SeuratProj…              <span style="text-decoration: underline;">9</span>970.                  548 #hf4{^&gt;7WI        </span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 90 more rows</span></span></span>
+<span><span class="co">## <span style="color: #949494;"># ℹ 45 more variables: dataset_id &lt;chr&gt;, sample_id &lt;chr&gt;, donor_id &lt;chr&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   feature_count &lt;int&gt;, age_days &lt;int&gt;, nFeature_expressed_in_sample &lt;int&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   nCount_RNA &lt;dbl&gt;, empty_droplet &lt;lgl&gt;, cell_type_unified_ensemble &lt;chr&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   is_immune &lt;lgl&gt;, subsets_Mito_percent &lt;int&gt;, subsets_Ribo_percent &lt;int&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   high_mitochondrion &lt;lgl&gt;, high_ribosome &lt;lgl&gt;, alive &lt;lgl&gt;,</span></span></span>
-<span><span class="co">## <span style="color: #949494;">#   scDblFinder.class &lt;chr&gt;, file_id_cellNexus_single_cell &lt;chr&gt;, ...</span></span></span></code></pre>
+<span><span class="co">## <span style="color: #949494;">#   scDblFinder.class &lt;chr&gt;, file_id_cellNexus_single_cell &lt;chr&gt;, …</span></span></span></code></pre>
 <p><code>tidyseurat</code> gives that object the same tibble interface
 you just used on the SingleCellExperiment. The rest of the workshop
 stays with SingleCellExperiment, because the pseudobulk tools speak that
@@ -337,7 +324,7 @@ analysis</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
