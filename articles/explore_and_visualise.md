@@ -176,13 +176,6 @@ sce_qc |>
 
 ![](explore_and_visualise_files/figure-html/cd45-plot-1.png)
 
-![Example Harmony UMAP, coloured by CD45. Immune cells occupy the
-high-CD45 region and epithelial cells the low-CD45
-region.](images/cd45-umap.png)
-
-Example Harmony UMAP, coloured by CD45. Immune cells occupy the
-high-CD45 region and epithelial cells the low-CD45 region.
-
 > **Exercise 4.** Colour the same UMAP by `dataset_id`. After Harmony,
 > study identity should be mixed within a cell-type region. Islands that
 > follow study boundaries are under-correction. Harmony adjusts the
