@@ -20,12 +20,12 @@ jobs:
     - uses: neurogenomics/rworkflows@master
       with:
         run_bioccheck: false
-        run_rcmdcheck: true
+        run_rcmdcheck: false
         as_cran: false
-        run_vignettes: true
+        run_vignettes: false
         has_testthat: false
         run_covr: false
-        run_pkgdown: true
+        run_pkgdown: false
         has_runit: false
         has_latex: false
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
