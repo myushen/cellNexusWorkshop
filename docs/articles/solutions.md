@@ -1,0 +1,121 @@
+# Solutions
+
+The same answers are hidden under each exercise. This page collects them
+in one place.
+
+Run these in the session that produced `obs_lung`, `sce_qc`,
+`sccomp_res`, and `epi_cluster_screen`. Counts depend on the atlas
+release and on the cell cap, so the answers are the tables these
+expressions print.
+
+## Exercise 1
+
+Cells per harmonised label for donors older than 50 years.
+
+``` r
+
+library(cellNexus)
+library(dplyr)
+
+get_metadata() |>
+  keep_quality_cells() |>
+  dplyr::filter(age_days > 50 * 365) |>
+  dplyr::count(cell_type_unified_ensemble, sort = TRUE)
+```
+
+A label with a few dozen cells across the whole atlas will have a very
+wide composition interval. Drop it from the cell-type list, or accept
+that its estimate is descriptive.
+
+## Exercise 2
+
+``` r
+
+obs_lung |>
+  dplyr::distinct(sample_id, age_bin) |>
+  dplyr::count(age_bin)
+```
+
+Both bins should contain donors. A bin with a handful of samples cannot
+support the age term once `dataset_id` is in the model.
+
+## Exercise 3
+
+``` r
+
+obs_lung |>
+  dplyr::distinct(sample_id, dataset_id, age_binary) |>
+  dplyr::count(dataset_id, age_binary) |>
+  tidyr::pivot_wider(names_from = age_binary, values_from = n, values_fill = 0)
+```
+
+A study with a zero in either age class does not identify an age effect
+on its own. The fixed `dataset_id` term uses the studies that contain
+both classes.
+
+## Exercise 4
+
+``` r
+
+sce_qc |>
+  ggplot2::ggplot(ggplot2::aes(UMAP1, UMAP2, colour = dataset_id)) +
+  ggplot2::geom_point(size = 0.3, alpha = 0.6) +
+  ggplot2::coord_equal() +
+  ggplot2::theme_bw()
+```
+
+Mixing of colours inside a cell-type region is the pattern you want
+after Harmony. A region painted by a single study is under-correction.
+The expression model still includes `dataset_id`, because the counts
+were not adjusted.
+
+## Exercise 5
+
+``` r
+
+library(cellNexusWorkshop)
+
+sce_qc |>
+  dplyr::count(cell_type_unified_ensemble, sort = TRUE)
+
+setdiff(immune_cell_types(), unique(sce_qc$cell_type_unified_ensemble))
+```
+
+Labels missing from this subsample are absent because of the cap, not
+because they are absent from `obs_lung`. Composition in the next article
+is fit on `obs_lung`, which keeps every cell of every retained sample.
+Fitting `sccomp` on `sce_qc` would estimate the subsample.
+
+## Exercise 6
+
+``` r
+
+sccomp_res |>
+  dplyr::filter(factor == "age_binary", c_FDR < 0.05) |>
+  dplyr::select(cell_type_unified_ensemble, dplyr::starts_with("c_"), c_FDR)
+```
+
+Read the sign of the effect column together with the boxplot. The
+contrast is donors over 50 against the reference level `"FALSE"` (50 and
+under), because `age_binary` was stored as character with `"FALSE"`
+first.
+
+## Exercise 7
+
+``` r
+
+epi_cluster_de_top
+epi_cluster_screen$screen
+```
+
+The chosen row is the first row of the screen after eligible clusters
+are sorted by `n_datasets_spanning_age`, then by the number of
+pseudobulk profiles. Quote `n_datasets_spanning_age` for that row. A
+value of 1 means the age term rests on a single study.
+
+## Exercise 8
+
+`c("age_binary", "old", "young")` tests old against young. Positive
+`log2FoldChange` means higher abundance in donors over 50. The boxplot
+for a gene in `signature_up` should sit higher in the `50-79` bin. If it
+sits lower, the factor levels and the contrast disagree.

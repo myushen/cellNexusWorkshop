@@ -151,10 +151,6 @@ sce_qc |>
   labs(colour = "CD45 (PTPRC)")
 ```
 
-```{r cd45-figure, echo=FALSE, eval=TRUE, fig.cap="Example Harmony UMAP, coloured by CD45. Immune cells occupy the high-CD45 region and epithelial cells the low-CD45 region."}
-knitr::include_graphics("images/cd45-umap.png")
-```
-
 
 > **Exercise 4.** Colour the same UMAP by `dataset_id`. After Harmony, study identity should be mixed within a cell-type region. Islands that follow study boundaries are under-correction. Harmony adjusts the embedding used for the picture. It does not adjust the counts, so the models in the next two articles still include `dataset_id`.
 
