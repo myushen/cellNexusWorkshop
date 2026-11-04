@@ -13,16 +13,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/myushen/cellNexusWorkshop/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/DESCRIPTION)
 
 Shen M, Gao Y, Mangiola S (2026). *cellNexusWorkshop: From the Human
 Cell Atlas to Analysis with cellNexus*. R package version 0.1.0,
 <https://myushen.github.io/cellNexusWorkshop>.
 
-@Manual{,\
-  title = {cellNexusWorkshop: From the Human Cell Atlas to Analysis with cellNexus},\
-  author = {Mengyuan Shen and Yingnan Gao and Stefano Mangiola},\
-  year = {2026},\
-  note = {R package version 0.1.0},\
-  url = {https://myushen.github.io/cellNexusWorkshop},\
-}
+    @Manual{,
+      title = {cellNexusWorkshop: From the Human Cell Atlas to Analysis with cellNexus},
+      author = {Mengyuan Shen and Yingnan Gao and Stefano Mangiola},
+      year = {2026},
+      note = {R package version 0.1.0},
+      url = {https://myushen.github.io/cellNexusWorkshop},
+    }

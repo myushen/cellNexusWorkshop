@@ -8,3 +8,8 @@
   expression.
 - Respiratory ageing case study: immune composition, then epithelial
   gene expression.
+- Cohort tissue comes from the CELLxGENE Census.
+  [`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
+  attaches `tissue`, and
+  [`annotate_cell_nexus()`](https://myushen.github.io/cellNexusWorkshop/reference/annotate_cell_nexus.md)
+  keeps the respiratory labels.

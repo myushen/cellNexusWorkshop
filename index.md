@@ -12,9 +12,11 @@ Each article shows the commands to run.
 
 ## Instructor names and contact information
 
-- Mengyuan Shen <shen.m@wehi.edu.au>
-- Yingnan Gao <yingnan.gao@adelaide.edu.au>
-- Stefano Mangiola <stefano.mangiola@adelaide.edu.au>
+- Mengyuan Shen [ shen.m@wehi.edu.au](mailto:shen.m@wehi.edu.au)
+- Yingnan Gao [
+  yingnan.gao@adelaide.edu.au](mailto:yingnan.gao@adelaide.edu.au)
+- Stefano Mangiola [
+  stefano.mangiola@adelaide.edu.au](mailto:stefano.mangiola@adelaide.edu.au)
 
 ## Syllabus
 
@@ -37,31 +39,33 @@ The commands below are for preparing a machine. The workshop targets R
 before the first `sccomp` fit so the session does not stop on a
 compiler.
 
-\
-[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"BiocManager"``)`\
-[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(``"remotes"``)`\
-[`Sys.setenv`](https://rdrr.io/r/base/Sys.setenv.html)`(``"R_REMOTES_NO_ERRORS_FROM_WARNINGS"`` ``=`` ``"true"``)`\
-\
-[`install.packages`](https://rdrr.io/r/utils/install.packages.html)`(`\
-`  ``"cmdstanr"``,`\
-`  repos ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"https://mc-stan.org/r-packages/"``, `[`getOption`](https://rdrr.io/r/base/options.html)`(``"repos"``)``)`\
-`)`\
-`cmdstanr``::``check_cmdstan_toolchain``(``fix ``=`` ``TRUE``)`\
-`cmdstanr``::``install_cmdstan``(``)`\
-\
-`BiocManager``::`[`install`](https://bioconductor.github.io/BiocManager/reference/install.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(`\
-`  ``"dplyr"``, ``"tidyr"``, ``"ggplot2"``, ``"patchwork"``, ``"stringr"``, ``"Matrix"``,`\
-`  ``"SummarizedExperiment"``, ``"SingleCellExperiment"``,`\
-`  ``"scater"``, ``"scran"``, ``"scuttle"``, ``"scrapper"``, ``"bluster"``, ``"harmony"``,`\
-`  ``"DESeq2"``, ``"org.Hs.eg.db"``, ``"AnnotationDbi"``, ``"singscore"``,`\
-`  ``"tidySingleCellExperiment"``, ``"tidySummarizedExperiment"``,`\
-`  ``"tidybulk"``, ``"tidyseurat"``, ``"tidyomics"``, ``"Seurat"``,`\
-`  ``"dbplyr"``, ``"duckdb"`\
-`)``)`\
-\
-`remotes``::`[`install_github`](https://remotes.r-lib.org/reference/install_github.html)`(``"MangiolaLaboratory/cellNexus"``)`\
-`remotes``::`[`install_github`](https://remotes.r-lib.org/reference/install_github.html)`(``"MangiolaLaboratory/sccomp"``)`\
-`remotes``::`[`install_github`](https://remotes.r-lib.org/reference/install_github.html)`(``"myushen/cellNexusWorkshop"``)`
+``` r
+
+install.packages("BiocManager")
+install.packages("remotes")
+Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
+
+install.packages(
+  "cmdstanr",
+  repos = c("https://mc-stan.org/r-packages/", getOption("repos"))
+)
+cmdstanr::check_cmdstan_toolchain(fix = TRUE)
+cmdstanr::install_cmdstan()
+
+BiocManager::install(c(
+  "dplyr", "tidyr", "ggplot2", "patchwork", "stringr", "Matrix",
+  "SummarizedExperiment", "SingleCellExperiment",
+  "scater", "scran", "scuttle", "scrapper", "bluster", "harmony",
+  "DESeq2", "org.Hs.eg.db", "AnnotationDbi", "singscore",
+  "tidySingleCellExperiment", "tidySummarizedExperiment",
+  "tidybulk", "tidyseurat", "tidyomics", "Seurat",
+  "dbplyr", "duckdb"
+))
+
+remotes::install_github("MangiolaLaboratory/cellNexus")
+remotes::install_github("MangiolaLaboratory/sccomp")
+remotes::install_github("myushen/cellNexusWorkshop")
+```
 
 From a clone of this repository, install the workshop package with
 `remotes::install_local(".", dependencies = FALSE)` after the packages
@@ -72,11 +76,13 @@ A Docker image that runs the same install is `Dockerfile`, based on
 
 Open the reusable script after installation:
 
-\
-[`file.edit`](https://rdrr.io/r/utils/file.edit.html)`(`[`system.file`](https://rdrr.io/r/base/system.file.html)`(`\
-`  ``"scripts"``, ``"workshop_respiratory_ageing.R"``,`\
-`  package ``=`` ``"cellNexusWorkshop"`\
-`)``)`
+``` r
+
+file.edit(system.file(
+  "scripts", "workshop_respiratory_ageing.R",
+  package = "cellNexusWorkshop"
+))
+```
 
 ## Workshop description
 
@@ -173,6 +179,9 @@ cluster.
 - Foroutan et al. (2018). Single sample scoring of molecular phenotypes.
   *BMC Bioinformatics* 19:404.
   <https://doi.org/10.1186/s12859-018-2435-4>
+- Gabry et al. (2019). Visualization in Bayesian workflow. *Journal of
+  the Royal Statistical Society Series A* 182:389–402.
+  <https://doi.org/10.1111/rssa.12378>
 
 ## Publish this site
 

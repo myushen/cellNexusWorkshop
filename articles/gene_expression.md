@@ -9,44 +9,51 @@ et al. 2018).
 The reusable script for everything you have run is installed with the
 package:
 
-\
-[`file.edit`](https://rdrr.io/r/utils/file.edit.html)`(`[`system.file`](https://rdrr.io/r/base/system.file.html)`(`\
-`  ``"scripts"``, ``"workshop_respiratory_ageing.R"``,`\
-`  package ``=`` ``"cellNexusWorkshop"`\
-`)``)`
+``` r
 
-\
-[`library`](https://rdrr.io/r/base/library.html)`(``cellNexus``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`cellNexusWorkshop`](https://myushen.github.io/cellNexusWorkshop)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`dplyr`](https://dplyr.tidyverse.org)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`ggplot2`](https://ggplot2.tidyverse.org)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``scater``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``scuttle``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``scran``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``scrapper``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`bluster`](https://bioconductor.org/packages/bluster)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`harmony`](https://github.com/immunogenomics/harmony)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``SingleCellExperiment``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`SummarizedExperiment`](https://bioconductor.org/packages/SummarizedExperiment)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`Matrix`](https://codeberg.org/jaganmn/Matrix)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``tidySingleCellExperiment``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``tidySummarizedExperiment``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``tidybulk``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(``AnnotationDbi``)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`org.Hs.eg.db`](https://bioconductor.org/packages/org.Hs.eg.db)`)`\
-[`library`](https://rdrr.io/r/base/library.html)`(`[`stringr`](https://stringr.tidyverse.org)`)`\
-\
-`if`` ``(``!`[`exists`](https://rdrr.io/r/base/exists.html)`(``"obs_lung"``)``)`` ``{`\
-`  ``obs_lung`` ``<-`` ``get_metadata``(``)`` ``|>`\
-`    ``keep_quality_cells``(``)`` ``|>`\
-`    ``dplyr``::`[`filter`](https://dplyr.tidyverse.org/reference/filter.html)`(`\
-`      ``dataset_id`` `[`%in%`](https://rdrr.io/r/base/match.html)` `[`respiratory_dataset_ids`](https://myushen.github.io/cellNexusWorkshop/reference/respiratory_dataset_ids.md)`(``)``,`\
-`      ``cell_type_unified_ensemble`` `[`%in%`](https://rdrr.io/r/base/match.html)` `[`c`](https://rdrr.io/r/base/c.html)`(`[`immune_cell_types`](https://myushen.github.io/cellNexusWorkshop/reference/immune_cell_types.md)`(``)``, `[`epithelial_cell_types`](https://myushen.github.io/cellNexusWorkshop/reference/epithelial_cell_types.md)`(``)``)``,`\
-`      ``age_days`` ``>=`` ``365``,`\
-`      ``age_days`` ``<`` ``80`` ``*`` ``365`\
-`    ``)`` ``|>`\
-`    `[`annotate_cell_nexus`](https://myushen.github.io/cellNexusWorkshop/reference/annotate_cell_nexus.md)`(``min_cells_per_sample ``=`` ``50``)`\
-`}`
+file.edit(system.file(
+  "scripts", "workshop_respiratory_ageing.R",
+  package = "cellNexusWorkshop"
+))
+```
+
+``` r
+
+library(cellNexus)
+library(cellNexusWorkshop)
+library(dplyr)
+library(ggplot2)
+library(scater)
+library(scuttle)
+library(scran)
+library(scrapper)
+library(bluster)
+library(harmony)
+library(SingleCellExperiment)
+library(SummarizedExperiment)
+library(Matrix)
+library(tidySingleCellExperiment)
+library(tidySummarizedExperiment)
+library(tidybulk)
+library(AnnotationDbi)
+library(org.Hs.eg.db)
+library(stringr)
+
+if (!exists("obs_lung")) {
+  dataset_ids <- respiratory_dataset_ids()
+  cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
+  obs_lung <- get_metadata() |>
+    keep_quality_cells() |>
+    dplyr::filter(
+      dataset_id %in% dataset_ids,
+      cell_type_unified_ensemble %in% cell_types_query,
+      age_days >= 365,
+      age_days < 80 * 365
+    ) |>
+    join_census_tissue() |>
+    annotate_cell_nexus(min_cells_per_sample = 50)
+}
+```
 
 ## Integrate and cluster the epithelial compartment
 
@@ -59,51 +66,57 @@ The example figures use 12000 cells. Harmony here is for clustering and
 the UMAP. The counts still carry study effects, and the model below
 still includes `dataset_id`.
 
-\
-`epi_cell_cap`` ``<-`` `[`as.integer`](https://rdrr.io/r/base/integer.html)`(`[`Sys.getenv`](https://rdrr.io/r/base/Sys.getenv.html)`(``"CELLNEXUS_WORKSHOP_MAX_CELLS"``, ``"4000"``)``)`\
-`min_cells_pb`` ``<-`` ``10L`\
-\
-[`set.seed`](https://rdrr.io/r/base/Random.html)`(``42``)`\
-`epi_cells`` ``<-`` ``obs_lung`` ``|>`\
-`  ``dplyr``::`[`filter`](https://dplyr.tidyverse.org/reference/filter.html)`(``cell_type_unified_ensemble`` ``==`` ``"epithelial"``)`\
-`epi_cells`` ``<-`` ``dplyr``::`[`slice_sample`](https://dplyr.tidyverse.org/reference/slice.html)`(`\
-`  ``epi_cells``,`\
-`  n ``=`` `[`min`](https://rdrr.io/r/base/Extremes.html)`(``epi_cell_cap``, `[`nrow`](https://rdrr.io/r/base/nrow.html)`(``epi_cells``)``)`\
-`)`\
-\
-`sce_epi`` ``<-`` ``epi_cells`` ``|>`\
-`  ``get_single_cell_experiment``(``assays ``=`` ``"counts"``)`` ``|>`\
-`  ``logNormCounts``(``)`\
-\
-`hvgs`` ``<-`` ``sce_epi`` ``|>`\
-`  ``modelGeneVar``(``)`` ``|>`\
-`  ``getTopHVGs``(``n ``=`` ``2000``)`\
-\
-`sce_epi`` ``<-`` ``sce_epi`` ``|>`\
-`  ``runPCA``(``ncomponents ``=`` ``30``, subset_row ``=`` ``hvgs``)`` ``|>`\
-`  ``RunHarmony``(`\
-`    group.by.vars ``=`` ``"dataset_id"``,`\
-`    dims.use ``=`` ``1``:``30``,`\
-`    verbose ``=`` ``FALSE``,`\
-`    reduction.save ``=`` ``"HARMONY"`\
-`  ``)`` ``|>`\
-`  ``runUMAP``(``dimred ``=`` ``"HARMONY"``, n_neighbors ``=`` ``15``)`\
-\
-`sce_epi``$``epi_cluster`` ``<-`` `[`factor`](https://rdrr.io/r/base/factor.html)`(`[`paste0`](https://rdrr.io/r/base/paste.html)`(`\
-`  ``"E"``,`\
-`  ``clusterCells``(`\
-`    ``sce_epi``,`\
-`    use.dimred ``=`` ``"HARMONY"``,`\
-`    BLUSPARAM ``=`` ``KmeansParam``(``centers ``=`` ``6L``)`\
-`  ``)`\
-`)``)`
+``` r
 
-\
-`sce_epi`` ``|>`\
-`  ``ggplot``(``aes``(``UMAP1``, ``UMAP2``, colour ``=`` ``epi_cluster``)``)`` ``+`\
-`  ``geom_point``(``size ``=`` ``0.3``, alpha ``=`` ``0.6``)`` ``+`\
-`  ``coord_equal``(``)`` ``+`\
-`  ``theme_bw``(``)`
+epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "4000"))
+min_cells_pb <- 10L
+
+set.seed(42)
+epi_cells <- obs_lung |>
+  dplyr::filter(cell_type_unified_ensemble == "epithelial")
+epi_cells <- dplyr::slice_sample(
+  epi_cells,
+  n = min(epi_cell_cap, nrow(epi_cells))
+)
+
+sce_epi <- epi_cells |>
+  get_single_cell_experiment(assays = "counts") |>
+  logNormCounts()
+
+hvgs <- sce_epi |>
+  modelGeneVar() |>
+  getTopHVGs(n = 2000)
+
+sce_epi <- sce_epi |>
+  runPCA(ncomponents = 30, subset_row = hvgs) |>
+  RunHarmony(
+    group.by.vars = "dataset_id",
+    dims.use = 1:30,
+    verbose = FALSE,
+    reduction.save = "HARMONY"
+  ) |>
+  runUMAP(dimred = "HARMONY", n_neighbors = 15)
+
+sce_epi$epi_cluster <- factor(paste0(
+  "E",
+  clusterCells(
+    sce_epi,
+    use.dimred = "HARMONY",
+    BLUSPARAM = KmeansParam(centers = 6L)
+  )
+))
+```
+
+``` r
+
+sce_epi |>
+  ggplot(aes(UMAP1, UMAP2, colour = epi_cluster)) +
+  geom_point(size = 0.3, alpha = 0.6) +
+  coord_equal() +
+  theme_bw()
+```
+
+![](gene_expression_files/figure-html/epi-umap-1.png)
 
 ![Example Harmony UMAP of epithelial cells, coloured by the six k-means
 clusters.](images/epithelial-umap.png)
@@ -117,35 +130,51 @@ which you report alongside the label.
 
 ## Aggregate sample-by-cluster pseudobulk
 
-`aggregateAcrossCells.se()` sums raw counts within each sample and
-cluster. The column `ncells` is the number of cells that entered each
-pseudobulk. Profiles with fewer than 10 cells are dropped.
-`log_cell_count` is a scaled depth covariate so profiles built from
-different numbers of cells are comparable.
+[`aggregateAcrossCells.se()`](https://rdrr.io/pkg/scrapper/man/aggregateAcrossCells.se.html)
+sums raw counts within each sample and cluster. The column `ncells` is
+the number of cells that entered each pseudobulk. Profiles with fewer
+than 10 cells are dropped. `log_cell_count` is a scaled depth covariate
+so profiles built from different numbers of cells are comparable.
 
-Precomputed `get_pseudobulk()` is sample by broad cell type. It is the
-right object for a cell-type-level question. This article needs sample
-by cluster, so the aggregation is done here.
+Precomputed
+[`get_pseudobulk()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_pseudobulk.html)
+is sample by broad cell type. It is the right object for a
+cell-type-level question. This article needs sample by cluster, so the
+aggregation is done here.
 
-\
-`pb_se`` ``<-`` ``scrapper``::``aggregateAcrossCells.se``(`\
-`  ``sce_epi``,`\
-`  factors ``=`` `[`list`](https://rdrr.io/r/base/list.html)`(`\
-`    sample_id ``=`` ``sce_epi``$``sample_id``,`\
-`    epi_cluster ``=`` ``sce_epi``$``epi_cluster`\
-`  ``)``,`\
-`  counts.name ``=`` ``"ncells"`\
-`)`\
-\
-`SummarizedExperiment``::`[`assayNames`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``pb_se``)``[`\
-`  ``SummarizedExperiment``::`[`assayNames`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``pb_se``)`` ``==`` ``"sums"`\
-`]`` ``<-`` ``"counts"`\
-\
-`pb_se`` ``<-`` ``pb_se`` ``|>`\
-`  ``dplyr``::`[`filter`](https://dplyr.tidyverse.org/reference/filter.html)`(``ncells`` ``>=`` ``min_cells_pb``)`` ``|>`\
-`  ``dplyr``::`[`mutate`](https://dplyr.tidyverse.org/reference/mutate.html)`(``log_cell_count ``=`` `[`as.numeric`](https://rdrr.io/r/base/numeric.html)`(`[`scale`](https://rdrr.io/r/base/scale.html)`(`[`log1p`](https://rdrr.io/r/base/Log.html)`(``ncells``)``)``)``)`\
-\
-`pb_se`
+``` r
+
+pb_se <- scrapper::aggregateAcrossCells.se(
+  sce_epi,
+  factors = list(
+    sample_id = sce_epi$sample_id,
+    epi_cluster = sce_epi$epi_cluster
+  ),
+  counts.name = "ncells"
+)
+
+SummarizedExperiment::assayNames(pb_se)[
+  SummarizedExperiment::assayNames(pb_se) == "sums"
+] <- "counts"
+
+pb_se <- pb_se |>
+  dplyr::filter(ncells >= min_cells_pb) |>
+  dplyr::mutate(log_cell_count = as.numeric(scale(log1p(ncells))))
+
+pb_se
+```
+
+    ## class: RangedSummarizedExperiment 
+    ## dim: 16315 240 
+    ## metadata(3): aggregated latest_filter_scope_report
+    ##   latest_mutate_scope_report
+    ## assays(2): counts detected
+    ## rownames(16315): ENSG00000144837 ENSG00000187554 ... ENSG00000120539
+    ##   ENSG00000205420
+    ## rowData names(0):
+    ## colnames(240): 1 7 ... 771 772
+    ## colData names(50): factor.sample_id factor.epi_cluster ... epi_cluster
+    ##   log_cell_count
 
 Confirm that `ncells` is the size of the aggregation group. Row sums of
 the count matrix are library size, which is orders of magnitude larger,
@@ -162,20 +191,44 @@ slightly lower thresholds below. If the function stops, read the printed
 screen and lower `min_samples_per_class`, or raise
 `CELLNEXUS_WORKSHOP_MAX_CELLS` and rebuild `pb_se`.
 
-\
-`de_design`` ``<-`` ``~`` ``age_binary`` ``+`` ``log_cell_count`` ``+`` ``dataset_id`\
-`de_contrast`` ``<-`` `[`list`](https://rdrr.io/r/base/list.html)`(`[`c`](https://rdrr.io/r/base/c.html)`(``"age_binary"``, ``"old"``, ``"young"``)``)`\
-`de_log2_fold_change_threshold`` ``<-`` ``1`\
-`de_signature_max_genes`` ``<-`` ``25L`\
-\
-`epi_cluster_screen`` ``<-`` `[`select_de_cluster`](https://myushen.github.io/cellNexusWorkshop/reference/select_de_cluster.md)`(`\
-`  ``pb_se``,`\
-`  ``de_design``,`\
-`  min_cells_per_class ``=`` ``100L``,`\
-`  min_samples_per_class ``=`` ``4L`\
-`)`\
-`epi_cluster_de_top`` ``<-`` ``epi_cluster_screen``$``cluster`\
-`epi_cluster_screen``$``screen`
+``` r
+
+de_design <- ~ age_binary + log_cell_count + dataset_id
+de_contrast <- list(c("age_binary", "old", "young"))
+de_log2_fold_change_threshold <- 1
+de_signature_max_genes <- 25L
+
+epi_cluster_screen <- select_de_cluster(
+  pb_se,
+  de_design,
+  min_cells_per_class = 100L,
+  min_samples_per_class = 4L
+)
+epi_cluster_de_top <- epi_cluster_screen$cluster
+epi_cluster_screen$screen
+```
+
+    ##   epi_cluster n_pseudobulk n_cells n_cells_young n_cells_old n_samples_young
+    ## 1          E2           59    1879          1050         829              31
+    ## 2          E1           46    1512           933         579              27
+    ## 3          E5           42     909           609         300              28
+    ## 4          E3           39    3090           929        2161              18
+    ## 5          E6           26    2421          2041         380              18
+    ## 6          E4           28     569           184         385               8
+    ##   n_samples_old n_datasets n_datasets_spanning_age frac_young  frac_old
+    ## 1            28          5                       3  0.5588079 0.4411921
+    ## 2            19          5                       1  0.6170635 0.3829365
+    ## 3            14          3                       1  0.6699670 0.3300330
+    ## 4            21          3                       1  0.3006472 0.6993528
+    ## 5             8          4                       1  0.8430401 0.1569599
+    ## 6            20          4                       0  0.3233743 0.6766257
+    ##   full_rank eligible
+    ## 1      TRUE     TRUE
+    ## 2      TRUE    FALSE
+    ## 3      TRUE    FALSE
+    ## 4      TRUE    FALSE
+    ## 5      TRUE    FALSE
+    ## 6     FALSE    FALSE
 
 > **Exercise 8.** From `epi_cluster_screen$screen`, which cluster was
 > chosen? How many studies in that cluster contribute both age classes
@@ -184,9 +237,11 @@ screen and lower `min_samples_per_class`, or raise
 
 Solution
 
-\
-`epi_cluster_de_top`\
-`epi_cluster_screen``$``screen`
+``` r
+
+epi_cluster_de_top
+epi_cluster_screen$screen
+```
 
 The chosen row is the first row of the screen after eligible clusters
 are sorted by `n_datasets_spanning_age`, then by the number of
@@ -204,92 +259,117 @@ Genes are kept when they reach 5 counts per million in at least half of
 the profiles, evaluated with respect to age, so a gene expressed in one
 age class survives.
 
-\
-`pb_se`` ``<-`` ``pb_se``[``, ``pb_se``$``epi_cluster`` ``==`` ``epi_cluster_de_top``]`\
-`pb_se`` ``<-`` ``pb_se``[``, ``Matrix``::`[`colSums`](https://rdrr.io/pkg/Matrix/man/colSums-methods.html)`(`[`assay`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``pb_se``, ``"counts"``)``)`` ``>`` ``0``]`\
-\
-[`assay`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``pb_se``, ``"counts"``)`` ``<-`` `[`round`](https://rdrr.io/r/base/Round.html)`(`[`assay`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``pb_se``, ``"counts"``)``)`\
-`pb_se``$``sizeFactor`` ``<-`` ``NULL`\
-\
-`pb_se``$``age_binary`` ``<-`` `[`factor`](https://rdrr.io/r/base/factor.html)`(`\
-`  `[`ifelse`](https://rdrr.io/r/base/ifelse.html)`(``pb_se``$``age_binary``, ``"old"``, ``"young"``)``,`\
-`  levels ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``"young"``, ``"old"``)`\
-`)`\
-\
-`pb_se`` ``<-`` ``pb_se`` ``|>`\
-`  ``keep_abundant``(`\
-`    formula_design ``=`` ``~`` ``age_binary``,`\
-`    minimum_proportion ``=`` ``0.5``,`\
-`    minimum_count_per_million ``=`` ``5`\
-`  ``)`` ``|>`\
-`  ``test_differential_expression``(`\
-`    ``de_design``,`\
-`    contrasts ``=`` ``de_contrast``,`\
-`    method ``=`` ``"DESeq2"``,`\
-`    omit_contrast_in_colnames ``=`` ``TRUE``,`\
-`    test_above_log2_fold_change ``=`` ``de_log2_fold_change_threshold``,`\
-`    sfType ``=`` ``"poscounts"`\
-`  ``)`` ``|>`\
-`  ``adjust_abundance``(`\
-`    .factor_unwanted ``=`` `[`c`](https://rdrr.io/r/base/c.html)`(``log_cell_count``, ``dataset_id``)``,`\
-`    .factor_of_interest ``=`` ``age_binary``,`\
-`    method ``=`` ``"limma_remove_batch_effect"`\
-`  ``)`
+``` r
 
-`adjust_abundance()` is for the figure. The test used the unadjusted
-counts. Batch-adjusted values stay out of any further test.
+pb_se <- pb_se[, pb_se$epi_cluster == epi_cluster_de_top]
+pb_se <- pb_se[, Matrix::colSums(assay(pb_se, "counts")) > 0]
 
-\
-`de_results`` ``<-`` `[`rowData`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``pb_se``)`` ``|>`\
-`  ``tibble``::`[`as_tibble`](https://tibble.tidyverse.org/reference/as_tibble.html)`(``rownames ``=`` ``".feature"``)`` ``|>`\
-`  ``dplyr``::`[`mutate`](https://dplyr.tidyverse.org/reference/mutate.html)`(`\
-`    gene_symbol ``=`` ``AnnotationDbi``::``mapIds``(`\
-`      ``org.Hs.eg.db``,`\
-`      keys ``=`` ``stringr``::``str_replace``(``.feature``, ``"\\.[0-9]+$"``, ``""``)``,`\
-`      keytype ``=`` ``"ENSEMBL"``,`\
-`      column ``=`` ``"SYMBOL"``,`\
-`      multiVals ``=`` ``"first"`\
-`    ``)`` ``|>`\
-`      `[`unname`](https://rdrr.io/r/base/unname.html)`(``)`` ``|>`\
-`      ``dplyr``::`[`coalesce`](https://dplyr.tidyverse.org/reference/coalesce.html)`(``.feature``)`\
-`  ``)`\
-\
-`signature_up`` ``<-`` ``de_results`` ``|>`\
-`  ``dplyr``::`[`filter`](https://dplyr.tidyverse.org/reference/filter.html)`(``pvalue`` ``<`` ``0.05``, ``log2FoldChange`` ``>`` ``0``)`` ``|>`\
-`  ``dplyr``::`[`slice_min`](https://dplyr.tidyverse.org/reference/slice.html)`(``pvalue``, n ``=`` ``de_signature_max_genes``)`\
-\
-`signature_down`` ``<-`` ``de_results`` ``|>`\
-`  ``dplyr``::`[`filter`](https://dplyr.tidyverse.org/reference/filter.html)`(``pvalue`` ``<`` ``0.05``, ``log2FoldChange`` ``<`` ``0``)`` ``|>`\
-`  ``dplyr``::`[`slice_min`](https://dplyr.tidyverse.org/reference/slice.html)`(``pvalue``, n ``=`` ``de_signature_max_genes``)`\
-\
-`signature_up`
+assay(pb_se, "counts") <- round(assay(pb_se, "counts"))
+pb_se$sizeFactor <- NULL
+
+pb_se$age_binary <- factor(
+  ifelse(pb_se$age_binary, "old", "young"),
+  levels = c("young", "old")
+)
+
+pb_se <- pb_se |>
+  keep_abundant(
+    formula_design = ~ age_binary,
+    minimum_proportion = 0.5,
+    minimum_count_per_million = 5
+  ) |>
+  test_differential_expression(
+    de_design,
+    contrasts = de_contrast,
+    method = "DESeq2",
+    omit_contrast_in_colnames = TRUE,
+    test_above_log2_fold_change = de_log2_fold_change_threshold,
+    sfType = "poscounts"
+  ) |>
+  adjust_abundance(
+    .factor_unwanted = c(log_cell_count, dataset_id),
+    .factor_of_interest = age_binary,
+    method = "limma_remove_batch_effect"
+  )
+```
+
+    ## Coefficients not estimable: dataset_ide04daea4_4412_45b5_989e_76a9be070a89
+
+[`adjust_abundance()`](https://rdrr.io/pkg/tidybulk/man/adjust_abundance-methods.html)
+is for the figure. The test used the unadjusted counts. Batch-adjusted
+values stay out of any further test.
+
+``` r
+
+de_results <- rowData(pb_se) |>
+  tibble::as_tibble(rownames = ".feature") |>
+  dplyr::mutate(
+    gene_symbol = AnnotationDbi::mapIds(
+      org.Hs.eg.db,
+      keys = stringr::str_replace(.feature, "\\.[0-9]+$", ""),
+      keytype = "ENSEMBL",
+      column = "SYMBOL",
+      multiVals = "first"
+    ) |>
+      unname() |>
+      dplyr::coalesce(.feature)
+  )
+
+signature_up <- de_results |>
+  dplyr::filter(pvalue < 0.05, log2FoldChange > 0) |>
+  dplyr::slice_min(pvalue, n = de_signature_max_genes)
+
+signature_down <- de_results |>
+  dplyr::filter(pvalue < 0.05, log2FoldChange < 0) |>
+  dplyr::slice_min(pvalue, n = de_signature_max_genes)
+
+signature_up
+```
+
+    ## # A tibble: 7 x 9
+    ##   .feature        .abundant baseMean log2FoldChange lfcSE  stat    pvalue   padj
+    ##   <chr>           <lgl>        <dbl>          <dbl> <dbl> <dbl>     <dbl>  <dbl>
+    ## 1 ENSG00000263639 TRUE        196.             4.44 0.777  5.71   4.88e-6 0.0522
+    ## 2 ENSG00000127324 TRUE          5.57           3.22 0.536  6.00   1.78e-5 0.0952
+    ## 3 ENSG00000133636 TRUE         34.8            5.31 1.18   4.51   1.25e-4 0.446 
+    ## 4 ENSG00000117983 TRUE        164.             3.89 0.866  4.49   4.30e-4 1     
+    ## 5 ENSG00000244734 TRUE         39.3            3.12 0.720  4.33   1.64e-3 1     
+    ## 6 ENSG00000125999 TRUE        458.             2.02 0.562  3.60   3.46e-2 1     
+    ## 7 ENSG00000161055 TRUE        851.             2.25 0.728  3.10   4.25e-2 1     
+    ## # i 1 more variable: gene_symbol <chr>
 
 The signature uses a nominal p-value cutoff, capped at 25 genes in each
 direction. It is a gene set for scoring. A claim about an individual
 gene needs the false-discovery column as well. Report both.
 
-\
-`marker_genes`` ``<-`` ``dplyr``::`[`bind_rows`](https://dplyr.tidyverse.org/reference/bind_rows.html)`(`\
-`  ``dplyr``::`[`mutate`](https://dplyr.tidyverse.org/reference/mutate.html)`(``signature_up``, direction ``=`` ``"up"``)``,`\
-`  ``dplyr``::`[`mutate`](https://dplyr.tidyverse.org/reference/mutate.html)`(``signature_down``, direction ``=`` ``"down"``)`\
-`)`` ``|>`\
-`  ``dplyr``::`[`select`](https://dplyr.tidyverse.org/reference/select.html)`(``.feature``, ``gene_symbol``, ``direction``)`\
-\
-`marker_plot_df`` ``<-`` ``pb_se``[``marker_genes``$``.feature``, ``]`` ``|>`\
-`  `[`as_tibble`](https://tibble.tidyverse.org/reference/as_tibble.html)`(``)`` ``|>`\
-`  ``dplyr``::`[`left_join`](https://dplyr.tidyverse.org/reference/mutate-joins.html)`(``marker_genes``, by ``=`` ``".feature"``)`
+``` r
 
-\
-`ggplot``(``marker_plot_df``, ``aes``(``age_bin``, `[`log1p`](https://rdrr.io/r/base/Log.html)`(``counts_adjusted``)``, fill ``=`` ``age_bin``)``)`` ``+`\
-`  ``geom_boxplot``(``outlier.size ``=`` ``0.4``, width ``=`` ``0.65``)`` ``+`\
-`  ``facet_wrap``(``~`` ``gene_symbol`` ``+`` ``direction``, scales ``=`` ``"free_y"``, ncol ``=`` ``6``)`` ``+`\
-`  ``theme_bw``(``)`` ``+`\
-`  ``theme``(``legend.position ``=`` ``"none"``, strip.text ``=`` ``element_text``(``size ``=`` ``7``)``)`` ``+`\
-`  ``labs``(`\
-`    x ``=`` ``"Age"``,`\
-`    y ``=`` ``"log1p(counts_adjusted)"``,`\
-`    title ``=`` `[`paste`](https://rdrr.io/r/base/paste.html)`(``"Cluster"``, ``epi_cluster_de_top``)`\
-`  ``)`
+marker_genes <- dplyr::bind_rows(
+  dplyr::mutate(signature_up, direction = "up"),
+  dplyr::mutate(signature_down, direction = "down")
+) |>
+  dplyr::select(.feature, gene_symbol, direction)
+
+marker_plot_df <- pb_se[marker_genes$.feature, ] |>
+  as_tibble() |>
+  dplyr::left_join(marker_genes, by = ".feature")
+```
+
+``` r
+
+ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
+  geom_boxplot(outlier.size = 0.4, width = 0.65) +
+  facet_wrap(~ gene_symbol + direction, scales = "free_y", ncol = 6) +
+  theme_bw() +
+  theme(legend.position = "none", strip.text = element_text(size = 7)) +
+  labs(
+    x = "Age",
+    y = "log1p(counts_adjusted)",
+    title = paste("Cluster", epi_cluster_de_top)
+  )
+```
+
+![](gene_expression_files/figure-html/marker-plot-1.png)
 
 ![Example marker boxplots. Each point is a donor-level pseudobulk
 profile in the cluster the screen selected. Abundance is log1p of the
@@ -312,48 +392,69 @@ sits lower, the factor levels and the contrast disagree.
 
 ## Score the signature on single cells
 
-If time remains. The score is the mean rank of the up genes minus the
-mean rank of the down genes, on the cells of the cluster that was
-tested. A shift between age classes is expected, because the genes were
-chosen on these donors. Treat it as a consistency check: a reversed or
-empty shift means a reversed contrast, the wrong cluster, or an
-identifier mismatch. Report how many signature genes were found in the
-matrix. Ensembl identifiers with a version suffix are a common way to
-lose most of the set. Generalisation needs donors held out before gene
-selection, or another cohort.
+If time remains. The score is a rank average (Foroutan et al. 2018): the
+mean rank of the up genes minus the mean rank of the down genes, on the
+cells of the cluster that was tested. Zero is a cell with no net
+signature, and a depleted cell stays below zero. A shift between age
+classes is expected, because the genes were chosen on these donors.
+Treat it as a consistency check: a reversed or empty shift means a
+reversed contrast, the wrong cluster, or an identifier mismatch. If the
+high scores sit in one corner of the UMAP, the cluster still mixes cell
+states. Report how many signature genes were found in the matrix.
+Ensembl identifiers with a version suffix are a common way to lose most
+of the set. Generalisation needs donors held out before gene selection,
+or another cohort.
 
-\
-[`library`](https://rdrr.io/r/base/library.html)`(``singscore``)`\
-\
-`sce`` ``<-`` ``sce_epi`` ``|>`\
-`  ``dplyr``::`[`filter`](https://dplyr.tidyverse.org/reference/filter.html)`(``epi_cluster`` ``==`` ``epi_cluster_de_top``)`\
-\
-`rank_mat`` ``<-`` ``rankGenes``(`[`as.matrix`](https://rdrr.io/r/base/matrix.html)`(`[`assay`](https://rdrr.io/pkg/SummarizedExperiment/man/SummarizedExperiment-class.html)`(``sce``, ``"logcounts"``)``)``)`\
-`sce``$``aging_signature_score`` ``<-`` ``simpleScore``(`\
-`  ``rank_mat``,`\
-`  upSet ``=`` ``signature_up``$``.feature``,`\
-`  downSet ``=`` ``if`` ``(`[`nrow`](https://rdrr.io/r/base/nrow.html)`(``signature_down``)`` ``>`` ``0``)`` ``signature_down``$``.feature`` ``else`` ``NULL`\
-`)``$``TotalScore`\
-\
-[`mean`](https://rdrr.io/r/base/mean.html)`(``signature_up``$``.feature`` `[`%in%`](https://rdrr.io/r/base/match.html)` `[`rownames`](https://rdrr.io/r/base/colnames.html)`(``sce``)``)`\
-[`mean`](https://rdrr.io/r/base/mean.html)`(``signature_down``$``.feature`` `[`%in%`](https://rdrr.io/r/base/match.html)` `[`rownames`](https://rdrr.io/r/base/colnames.html)`(``sce``)``)`
+``` r
 
-\
-`sce`` ``|>`\
-`  ``ggplot``(``aes``(``UMAP1``, ``UMAP2``, colour ``=`` ``aging_signature_score``)``)`` ``+`\
-`  ``geom_point``(``size ``=`` ``0.3``, alpha ``=`` ``0.6``)`` ``+`\
-`  ``scale_colour_viridis_c``(``option ``=`` ``"magma"``)`` ``+`\
-`  ``facet_wrap``(``~`` ``age_bin``, ncol ``=`` ``2``)`` ``+`\
-`  ``coord_equal``(``)`` ``+`\
-`  ``theme_bw``(``)`` ``+`\
-`  ``labs``(``colour ``=`` ``"Ageing score"``, title ``=`` `[`paste`](https://rdrr.io/r/base/paste.html)`(``"Cluster"``, ``epi_cluster_de_top``)``)`
+library(singscore)
 
-\
-`sce`` ``|>`\
-`  ``ggplot``(``aes``(``aging_signature_score``, fill ``=`` ``age_bin``, colour ``=`` ``age_bin``)``)`` ``+`\
-`  ``geom_density``(``alpha ``=`` ``0.35``, linewidth ``=`` ``0.6``)`` ``+`\
-`  ``theme_bw``(``)`` ``+`\
-`  ``labs``(``x ``=`` ``"Ageing signature score"``, y ``=`` ``"Density"``, fill ``=`` ``"Age"``, colour ``=`` ``"Age"``)`
+sce <- sce_epi |>
+  dplyr::filter(epi_cluster == epi_cluster_de_top)
+
+rank_mat <- rankGenes(as.matrix(assay(sce, "logcounts")))
+sce$aging_signature_score <- simpleScore(
+  rank_mat,
+  upSet = signature_up$.feature,
+  downSet = if (nrow(signature_down) > 0) signature_down$.feature else NULL
+)$TotalScore
+
+mean(signature_up$.feature %in% rownames(sce))
+```
+
+    ## [1] 1
+
+``` r
+
+mean(signature_down$.feature %in% rownames(sce))
+```
+
+    ## [1] 1
+
+``` r
+
+sce |>
+  ggplot(aes(UMAP1, UMAP2, colour = aging_signature_score)) +
+  geom_point(size = 0.3, alpha = 0.6) +
+  scale_colour_viridis_c(option = "magma") +
+  facet_wrap(~ age_bin, ncol = 2) +
+  coord_equal() +
+  theme_bw() +
+  labs(colour = "Ageing score", title = paste("Cluster", epi_cluster_de_top))
+```
+
+![](gene_expression_files/figure-html/unnamed-chunk-10-1.png)
+
+``` r
+
+sce |>
+  ggplot(aes(aging_signature_score, fill = age_bin, colour = age_bin)) +
+  geom_density(alpha = 0.35, linewidth = 0.6) +
+  theme_bw() +
+  labs(x = "Ageing signature score", y = "Density", fill = "Age", colour = "Age")
+```
+
+![](gene_expression_files/figure-html/unnamed-chunk-11-1.png)
 
 ## What you now have
 
