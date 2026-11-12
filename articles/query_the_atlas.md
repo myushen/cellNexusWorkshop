@@ -1,5 +1,8 @@
 # 1. Query the atlas
 
+Source:
+[`vignettes/query_the_atlas.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/query_the_atlas.Rmd)
+
 This page is the script for the first block. Run the code in your R
 session, in order.
 
@@ -61,16 +64,22 @@ metadata
     ## #   file_id_cellNexus_pseudobulk <chr>, count_upper_bound <dbl>, …
 
 [`keep_quality_cells()`](https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html)
-applies one gate and filters out bad quality cells from every sample.
+applies one gate and filters out bad quality cells from every sample. A
+cell is kept when `empty_droplet == FALSE`, `alive == TRUE`,
+`scDblFinder.class != "doublet"`, and `feature_count >= 5000`.
 
 ![](images/quality-control.png)
 
-- An **empty droplet** is liquid captured with almost no cell in it. It
-  still produces a few gene measurements, mostly background. Counting it
-  as a cell inflates the number of cells and adds noise.
-- A **dead cell** is detected by a high mitochondrial percentage.
-- A **doublet** is two cells captured together. Their measurements are
-  mixed, so the row can look like a cell type that does not exist.
+- An **empty droplet** (`empty_droplet == TRUE`) is liquid captured with
+  almost no cell in it. It still produces a few gene measurements, mostly
+  background. Counting it as a cell inflates the number of cells and adds
+  noise. The gate keeps `empty_droplet == FALSE`.
+- A **dead cell** (`alive == FALSE`) is detected by a high mitochondrial
+  percentage. The gate keeps `alive == TRUE`.
+- A **doublet** (`scDblFinder.class == "doublet"`) is two cells captured
+  together. Their measurements are mixed, so the row can look like a cell
+  type that does not exist. The gate keeps
+  `scDblFinder.class != "doublet"`.
 
 The same checks are computed for each sample. Detailed information on
 the procedure is the [cellNexus quality-control

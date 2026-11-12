@@ -67,8 +67,6 @@
 </li>
 <li>Yingnan Gao <a href="mailto:yingnan.gao@adelaide.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> yingnan.gao@adelaide.edu.au</a>
 </li>
-<li>Stefano Mangiola <a href="mailto:stefano.mangiola@adelaide.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> stefano.mangiola@adelaide.edu.au</a>
-</li>
 </ul>
 </div>
 <div class="section level2">
@@ -112,14 +110,8 @@
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"MangiolaLaboratory/cellNexus"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"MangiolaLaboratory/sccomp"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"myushen/cellNexusWorkshop"</span><span class="op">)</span></span></code></pre></div>
-<p>From a clone of this repository, install the workshop package with <code>remotes::install_local(".", dependencies = FALSE)</code> after the packages above.</p>
-<p>A Docker image that runs the same install is <code>Dockerfile</code>, based on <code>bioconductor/bioconductor_docker:devel</code>.</p>
-<p>Open the reusable script after installation:</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/file.edit.html" class="external-link">file.edit</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
-<span>  <span class="st">"scripts"</span>, <span class="st">"workshop_respiratory_ageing.R"</span>,</span>
-<span>  package <span class="op">=</span> <span class="st">"cellNexusWorkshop"</span></span>
-<span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<p>The reusable script is <a href="https://github.com/myushen/cellNexusWorkshop/blob/main/inst/scripts/workshop_respiratory_ageing.R" class="external-link"><code>inst/scripts/workshop_respiratory_ageing.R</code></a>.</p>
+<p>The caches are already saved in the virtual environment, which greatly reduces the time spent downloading data and running the analyses during the session. Thanks to the workshop organisers.</p>
 </div>
 <div class="section level2">
 <h2 id="workshop-description">Workshop description<a class="anchor" aria-label="anchor" href="#workshop-description"></a>
@@ -129,32 +121,41 @@
 <h3 id="pre-requisites">Pre-requisites<a class="anchor" aria-label="anchor" href="#pre-requisites"></a>
 </h3>
 <ul>
-<li>No prior R experience is required. The articles show each command.</li>
-<li>An R 4.5 session with the packages above, and CmdStan installed</li>
+<li>Basic R experience is preferred but not required. The articles show each command.</li>
+<li>A R 4.6 session with the packages above, and CmdStan installed</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="workshop-participation">Workshop participation<a class="anchor" aria-label="anchor" href="#workshop-participation"></a>
 </h3>
 <p>The workshop format is a 90 minute session consisting of hands-on demos, exercises and questions. Run the article code in order, in one R session. Each exercise has a solution hidden underneath it. The <a href="articles/solutions.html">Solutions</a> page collects the same answers.</p>
-<p>The website shows the code. Run it in R to see your own results. The figures already on the site are examples from a larger download (12,000 cells, and a slower <code>sccomp</code> fit). During the session the download is capped at 4,000 cells and <code>sccomp</code> uses Pathfinder, which finishes sooner, so your figures can look a little different. To match the example figures, set <code>CELLNEXUS_WORKSHOP_MAX_CELLS=12000</code> and <code>CELLNEXUS_WORKSHOP_INFERENCE=hmc</code> before you start.</p>
+<p>The website shows the code. Run it in R to see your own results. The figures on the site were generated ahead of time and saved in the cache, so the session does not wait on the download or the fit. Without that cache, the full workflow takes about 30 minutes.</p>
 </div>
 <div class="section level3">
 <h3 id="r--bioconductor-packages-used">
 <em>R</em> / <em>Bioconductor</em> packages used<a class="anchor" aria-label="anchor" href="#r--bioconductor-packages-used"></a>
 </h3>
 <ul>
-<li><a href="https://www.biorxiv.org/content/10.64898/2026.04.14.718336v3" class="external-link">cellNexus</a></li>
-<li><a href="https://www.pnas.org/doi/10.1073/pnas.2203828120" class="external-link">sccomp</a></li>
-<li>tidySingleCellExperiment, tidySummarizedExperiment, tidybulk, tidyseurat</li>
-<li>scater, scran, scrapper, bluster, harmony</li>
-<li>DESeq2, org.Hs.eg.db, singscore</li>
+<li><a href="https://github.com/MangiolaLaboratory/cellNexus" class="external-link">cellNexus</a></li>
+<li><a href="https://bioconductor.org/packages/sccomp" class="external-link">sccomp</a></li>
+<li><a href="https://bioconductor.org/packages/tidySingleCellExperiment" class="external-link">tidySingleCellExperiment</a></li>
+<li><a href="https://bioconductor.org/packages/tidySummarizedExperiment" class="external-link">tidySummarizedExperiment</a></li>
+<li><a href="https://bioconductor.org/packages/tidybulk" class="external-link">tidybulk</a></li>
+<li><a href="https://github.com/stemangiola/tidyseurat" class="external-link">tidyseurat</a></li>
+<li><a href="https://bioconductor.org/packages/scater" class="external-link">scater</a></li>
+<li><a href="https://bioconductor.org/packages/scran" class="external-link">scran</a></li>
+<li><a href="https://bioconductor.org/packages/scrapper" class="external-link">scrapper</a></li>
+<li><a href="https://bioconductor.org/packages/bluster" class="external-link">bluster</a></li>
+<li><a href="https://github.com/immunogenomics/harmony" class="external-link">harmony</a></li>
+<li><a href="https://bioconductor.org/packages/DESeq2" class="external-link">DESeq2</a></li>
+<li><a href="https://bioconductor.org/packages/org.Hs.eg.db" class="external-link">org.Hs.eg.db</a></li>
+<li><a href="https://bioconductor.org/packages/singscore" class="external-link">singscore</a></li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="workshop-goals-and-objectives">Workshop goals and objectives<a class="anchor" aria-label="anchor" href="#workshop-goals-and-objectives"></a>
 </h3>
-<p>Participants leave with a script that defines a cohort from cellNexus metadata, downloads the matching counts, and fits two donor-level models: cell-type composition, and gene expression within one epithelial cluster.</p>
+<p>Participants leave with a script that defines a cohort of Human Cell Atlas from cellNexus metadata, downloads the matching counts, and fits two donor-level models: cell-type composition, and gene expression within one epithelial cluster.</p>
 <div class="section level4">
 <h4 id="learning-goals">Learning goals<a class="anchor" aria-label="anchor" href="#learning-goals"></a>
 </h4>
@@ -210,7 +211,6 @@
 <div class="section level2">
 <h2 id="publish-this-site">Publish this site<a class="anchor" aria-label="anchor" href="#publish-this-site"></a>
 </h2>
-<p>The articles are the package vignettes. GitHub Actions (<code>.github/workflows/rworkflows.yml</code>) builds the pkgdown site and deploys the <code>gh-pages</code> branch. In the repository settings, set GitHub Pages to that branch. The address is the <code>url</code> field in <code>_pkgdown.yml</code>. Change that URL, and the GitHub links, if the repository is published under a different account.</p>
 <p>Build the site locally with <code><a href="https://pkgdown.r-lib.org/reference/build_site.html" class="external-link">pkgdown::build_site()</a></code>.</p>
 </div>
 </div>

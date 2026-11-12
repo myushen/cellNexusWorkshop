@@ -1,5 +1,8 @@
 # 2. Explore and visualise
 
+Source:
+[`vignettes/explore_and_visualise.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/explore_and_visualise.Rmd)
+
 Continue in the session from [Query the
 atlas](https://myushen.github.io/cellNexusWorkshop/articles/query_the_atlas.md).
 This block downloads a SingleCellExperiment object, checks that immune
@@ -61,9 +64,21 @@ sampled_qc <- obs_lung |>
   dplyr::slice(sample.int(dplyr::n(), min(cells_per_sample_qc, dplyr::n()))) |>
   dplyr::ungroup()
 
+# Compiling the object takes about 8 minutes.
 sce_qc <- sampled_qc |>
-  get_single_cell_experiment(assays = "counts") |>
-  logNormCounts()
+  get_single_cell_experiment(assays = "counts")
+```
+
+Building `sce_qc` takes about 8 minutes. The counts are written to `inst/extdata/sce_qc.rds` before log-normalisation. If time is short, load that file instead of the download.
+
+``` r
+sce_qc <- readRDS(
+  system.file("extdata", "sce_qc.rds", package = "cellNexusWorkshop")
+)
+```
+
+``` r
+sce_qc <- logNormCounts(sce_qc)
 
 sce_qc
 ```

@@ -115,18 +115,18 @@ atlas of this size practical to subset.</p>
 <span><span class="co">## <span style="color: #949494;">#   scDblFinder.class &lt;chr&gt;, file_id_cellNexus_single_cell &lt;chr&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   file_id_cellNexus_pseudobulk &lt;chr&gt;, count_upper_bound &lt;dbl&gt;, …</span></span></span></code></pre>
 <p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells()</a></code> applies one gate and filters out
-bad quality cells from every sample.</p>
+bad quality cells from every sample. A cell is kept when <code>empty_droplet == FALSE</code>, <code>alive == TRUE</code>, <code>scDblFinder.class != "doublet"</code>, and <code>feature_count &gt;= 5000</code>.</p>
 <p><img src="images/quality-control.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto auto auto 0;"></p>
 <ul>
-<li>An <strong>empty droplet</strong> is liquid captured with almost no
+<li>An <strong>empty droplet</strong> (<code>empty_droplet == TRUE</code>) is liquid captured with almost no
 cell in it. It still produces a few gene measurements, mostly
 background. Counting it as a cell inflates the number of cells and adds
-noise.</li>
-<li>A <strong>dead cell</strong> is detected by a high mitochondrial
-percentage.</li>
-<li>A <strong>doublet</strong> is two cells captured together. Their
+noise. The gate keeps <code>empty_droplet == FALSE</code>.</li>
+<li>A <strong>dead cell</strong> (<code>alive == FALSE</code>) is detected by a high mitochondrial
+percentage. The gate keeps <code>alive == TRUE</code>.</li>
+<li>A <strong>doublet</strong> (<code>scDblFinder.class == "doublet"</code>) is two cells captured together. Their
 measurements are mixed, so the row can look like a cell type that does
-not exist.</li>
+not exist. The gate keeps <code>scDblFinder.class != "doublet"</code>.</li>
 </ul>
 <p>The same checks are computed for each sample. Detailed information on
 the procedure is the <a href="https://cellnexus.org/#quality-control-steps" class="external-link">cellNexus

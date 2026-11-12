@@ -1,5 +1,8 @@
 # 3. Compositional analysis
 
+Source:
+[`vignettes/compositional_analysis.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/compositional_analysis.Rmd)
+
 Continue in the same session. This block fits a donor-level model of
 immune cell-type proportions with `sccomp` (Mangiola et al. 2023).
 
