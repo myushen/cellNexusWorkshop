@@ -30,6 +30,7 @@ Imports:
     stats,
     SummarizedExperiment
 Suggests:
+    arrow,
     cellNexus,
     dbplyr,
     duckdb,

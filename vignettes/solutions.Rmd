@@ -11,6 +11,9 @@ vignette: >
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
 
+Source:
+[`vignettes/solutions.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/solutions.Rmd)
+
 The same answers are hidden under each exercise. This page collects them in one place.
 
 Run these in the session that produced `obs_lung`, `sce_qc`, `sccomp_res`, and `epi_cluster_screen`. Counts depend on the atlas release and on the cell cap, so the answers are the tables these expressions print.
@@ -67,12 +70,10 @@ Mixing of colours inside a cell-type region is the pattern you want after Harmon
 ## Exercise 5
 
 ```{r}
-library(cellNexusWorkshop)
-
 sce_qc |>
   dplyr::count(cell_type_unified_ensemble, sort = TRUE)
 
-setdiff(immune_cell_types(), unique(sce_qc$cell_type_unified_ensemble))
+setdiff(immune_cell_types, unique(sce_qc$cell_type_unified_ensemble))
 ```
 
 Labels missing from this subsample are absent because of the cap, not because they are absent from `obs_lung`. Composition in the next article is fit on `obs_lung`, which keeps every cell of every retained sample. Fitting `sccomp` on `sce_qc` would estimate the subsample.

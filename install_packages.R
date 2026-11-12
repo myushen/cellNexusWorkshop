@@ -39,6 +39,7 @@ cmdstanr::check_cmdstan_toolchain(fix = TRUE)
 cmdstanr::install_cmdstan(version = "2.37.0")
 
 # cellxgene.census 1.16.1 is git tag v1.18.0
+# Note that this package is not available on Windows machine.
 remotes::install_github(
   "chanzuckerberg/cellxgene-census",
   ref = "v1.18.0",
@@ -61,7 +62,7 @@ BiocManager::install(
     "tidybulk", "tidyseurat", "tidyomics",
     "HDF5Array"
   ),
-  version = "3.24",
+  version = "3.23",
   ask = FALSE,
   update = FALSE
 )

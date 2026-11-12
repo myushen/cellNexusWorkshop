@@ -13,7 +13,6 @@ This is the page to follow during the session. Read this page, then the articles
 
 * Mengyuan Shen <a href="mailto:shen.m@wehi.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> shen.m@wehi.edu.au</a>
 * Yingnan Gao <a href="mailto:yingnan.gao@adelaide.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> yingnan.gao@adelaide.edu.au</a>
-* Stefano Mangiola <a href="mailto:stefano.mangiola@adelaide.edu.au"><i class="fa-solid fa-envelope" aria-hidden="true"></i> stefano.mangiola@adelaide.edu.au</a>
 
 ## Syllabus
 
@@ -56,18 +55,9 @@ remotes::install_github("MangiolaLaboratory/sccomp")
 remotes::install_github("myushen/cellNexusWorkshop")
 ```
 
-From a clone of this repository, install the workshop package with `remotes::install_local(".", dependencies = FALSE)` after the packages above.
+The reusable script is [`inst/scripts/workshop_respiratory_ageing.R`](https://github.com/myushen/cellNexusWorkshop/blob/main/inst/scripts/workshop_respiratory_ageing.R). 
 
-A Docker image that runs the same install is `Dockerfile`, based on `bioconductor/bioconductor_docker:devel`.
-
-Open the reusable script after installation:
-
-```r
-file.edit(system.file(
-  "scripts", "workshop_respiratory_ageing.R",
-  package = "cellNexusWorkshop"
-))
-```
+The caches are already saved in the virtual environment, which greatly reduces the time spent downloading data and running the analyses during the session. Thanks to the workshop organisers.
 
 ## Workshop description
 
@@ -75,27 +65,35 @@ In this session you will use cellNexus to query and download a curated subset of
 
 ### Pre-requisites
 
-* No prior R experience is required. The articles show each command.
-* An R 4.5 session with the packages above, and CmdStan installed
+* Basic R experience is preferred but not required. The articles show each command.
+* A R 4.6 session with the packages above, and CmdStan installed
 
 ### Workshop participation
 
 The workshop format is a 90 minute session consisting of hands-on demos, exercises and questions. Run the article code in order, in one R session. Each exercise has a solution hidden underneath it. The [Solutions](articles/solutions.html) page collects the same answers.
 
-
-The website shows the code. Run it in R to see your own results. The figures already on the site are examples from a larger download (12,000 cells, and a slower `sccomp` fit). During the session the download is capped at 4,000 cells and `sccomp` uses Pathfinder, which finishes sooner, so your figures can look a little different. To match the example figures, set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` and `CELLNEXUS_WORKSHOP_INFERENCE=hmc` before you start.
+The website shows the code. Run it in R to see your own results. The figures on the site were generated ahead of time and saved in the cache, so the session does not wait on the download or the fit. Without that cache, the full workflow takes about 30 minutes.
 
 ### _R_ / _Bioconductor_ packages used
 
-* [cellNexus](https://www.biorxiv.org/content/10.64898/2026.04.14.718336v3)
-* [sccomp](https://www.pnas.org/doi/10.1073/pnas.2203828120)
-* tidySingleCellExperiment, tidySummarizedExperiment, tidybulk, tidyseurat
-* scater, scran, scrapper, bluster, harmony
-* DESeq2, org.Hs.eg.db, singscore
+* [cellNexus](https://github.com/MangiolaLaboratory/cellNexus)
+* [sccomp](https://bioconductor.org/packages/sccomp)
+* [tidySingleCellExperiment](https://bioconductor.org/packages/tidySingleCellExperiment)
+* [tidySummarizedExperiment](https://bioconductor.org/packages/tidySummarizedExperiment)
+* [tidybulk](https://bioconductor.org/packages/tidybulk)
+* [tidyseurat](https://github.com/stemangiola/tidyseurat)
+* [scater](https://bioconductor.org/packages/scater)
+* [scran](https://bioconductor.org/packages/scran)
+* [scrapper](https://bioconductor.org/packages/scrapper)
+* [bluster](https://bioconductor.org/packages/bluster)
+* [harmony](https://github.com/immunogenomics/harmony)
+* [DESeq2](https://bioconductor.org/packages/DESeq2)
+* [org.Hs.eg.db](https://bioconductor.org/packages/org.Hs.eg.db)
+* [singscore](https://bioconductor.org/packages/singscore)
 
 ### Workshop goals and objectives
 
-Participants leave with a script that defines a cohort from cellNexus metadata, downloads the matching counts, and fits two donor-level models: cell-type composition, and gene expression within one epithelial cluster.
+Participants leave with a script that defines a cohort of Human Cell Atlas from cellNexus metadata, downloads the matching counts, and fits two donor-level models: cell-type composition, and gene expression within one epithelial cluster.
 
 #### Learning goals
 
@@ -128,7 +126,5 @@ Participants leave with a script that defines a cohort from cellNexus metadata, 
 * Gabry et al. (2019). Visualization in Bayesian workflow. *Journal of the Royal Statistical Society Series A* 182:389–402. <https://doi.org/10.1111/rssa.12378>
 
 ## Publish this site
-
-The articles are the package vignettes. GitHub Actions (`.github/workflows/rworkflows.yml`) builds the pkgdown site and deploys the `gh-pages` branch. In the repository settings, set GitHub Pages to that branch. The address is the `url` field in `_pkgdown.yml`. Change that URL, and the GitHub links, if the repository is published under a different account.
 
 Build the site locally with `pkgdown::build_site()`.

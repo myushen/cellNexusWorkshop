@@ -1,5 +1,8 @@
 # 4. Gene expression
 
+Source:
+[`vignettes/gene_expression.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/gene_expression.Rmd)
+
 Continue in the same session. This block integrates epithelial cells,
 aggregates sample-by-cluster pseudobulk, and tests donor-level age
 effects with DESeq2 through tidybulk (Love et al. 2014). The last

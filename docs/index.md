@@ -15,8 +15,6 @@ Each article shows the commands to run.
 - Mengyuan Shen [ shen.m@wehi.edu.au](mailto:shen.m@wehi.edu.au)
 - Yingnan Gao [
   yingnan.gao@adelaide.edu.au](mailto:yingnan.gao@adelaide.edu.au)
-- Stefano Mangiola [
-  stefano.mangiola@adelaide.edu.au](mailto:stefano.mangiola@adelaide.edu.au)
 
 ## Syllabus
 
@@ -95,8 +93,8 @@ you from the Human Cell Atlas to these analyses.
 
 ### Pre-requisites
 
-- No prior R experience is required. The articles show each command.
-- An R 4.5 session with the packages above, and CmdStan installed
+- Basic R experience is preferred but not required. The articles show each command.
+- A R 4.6 session with the packages above, and CmdStan installed
 
 ### Workshop participation
 
@@ -109,19 +107,24 @@ page collects the same answers.
 The website shows the code. Run it in R to see your own results. The
 figures already on the site are examples from a larger download (12,000
 cells, and a slower `sccomp` fit). During the session the download is
-capped at 4,000 cells and `sccomp` uses Pathfinder, which finishes
-sooner, so your figures can look a little different. To match the
-example figures, set `CELLNEXUS_WORKSHOP_MAX_CELLS=12000` and
-`CELLNEXUS_WORKSHOP_INFERENCE=hmc` before you start.
+capped at 12,000 cells and `sccomp` uses Hamiltonian Monte Carlo (hmc) for inference.
 
 ### *R* / *Bioconductor* packages used
 
-- [cellNexus](https://www.biorxiv.org/content/10.64898/2026.04.14.718336v3)
-- [sccomp](https://www.pnas.org/doi/10.1073/pnas.2203828120)
-- tidySingleCellExperiment, tidySummarizedExperiment, tidybulk,
-  tidyseurat
-- scater, scran, scrapper, bluster, harmony
-- DESeq2, org.Hs.eg.db, singscore
+- [cellNexus](https://github.com/MangiolaLaboratory/cellNexus)
+- [sccomp](https://bioconductor.org/packages/sccomp)
+- [tidySingleCellExperiment](https://bioconductor.org/packages/tidySingleCellExperiment)
+- [tidySummarizedExperiment](https://bioconductor.org/packages/tidySummarizedExperiment)
+- [tidybulk](https://bioconductor.org/packages/tidybulk)
+- [tidyseurat](https://github.com/stemangiola/tidyseurat)
+- [scater](https://bioconductor.org/packages/scater)
+- [scran](https://bioconductor.org/packages/scran)
+- [scrapper](https://bioconductor.org/packages/scrapper)
+- [bluster](https://bioconductor.org/packages/bluster)
+- [harmony](https://github.com/immunogenomics/harmony)
+- [DESeq2](https://bioconductor.org/packages/DESeq2)
+- [org.Hs.eg.db](https://bioconductor.org/packages/org.Hs.eg.db)
+- [singscore](https://bioconductor.org/packages/singscore)
 
 ### Workshop goals and objectives
 

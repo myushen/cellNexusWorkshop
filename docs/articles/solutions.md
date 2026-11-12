@@ -1,5 +1,7 @@
 # Solutions
 
+Source: [`vignettes/solutions.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/solutions.Rmd)
+
 The same answers are hidden under each exercise. This page collects them
 in one place.
 
