@@ -3,9 +3,6 @@
 Source:
 [`vignettes/query_the_atlas.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/query_the_atlas.Rmd)
 
-This page is the script for the first block. Run the code in your R
-session, in order.
-
 This practice takes Human Cell Atlas data from CELLxGENE. Each study is
 a table of measurements at single cell level (one row per cell).
 cellNexus makes that query reusable and fast at the sample level. It
@@ -15,26 +12,33 @@ three labels into one unified cell-type label for every cell. The
 diagram below shows the preprocessing steps, starting from the original
 CELLxGENE data.
 
-![](images/abstract.png)
+![](../reference/figures/abstract.png)
 
 ## Setup
 
 ``` r
-
 library(cellNexus)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
-library(cellNexusWorkshop)
 ```
 
 [`get_metadata()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html)
-returns a lazy DuckDB table. Filters stay in the query until something
-collects the rows, which is what makes an atlas of this size practical
-to subset.
+returns a lazy DuckDB table, and accepts `tidyverse` syntax to filter
+the data.
+
+## Quality control
+
+![](../reference/figures/quality-control.png)
+
+- An **empty droplet** is liquid captured with almost no cell in it. It
+  still produces a few gene measurements, mostly background. Counting it
+  as a cell inflates the number of cells and adds noise.
+- A **dead cell** is detected by a high mitochondrial percentage.
+- A **doublet** is two cells captured together. Their measurements are
+  mixed, so the row can look like a cell type that does not exist.
 
 ``` r
-
 metadata <- get_metadata() |>
   keep_quality_cells()
 
@@ -42,7 +46,7 @@ metadata
 ```
 
     ## # Source:   SQL [?? x 33]
-    ## # Database: DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
+    ## # Database: DuckDB 1.4.3 [shen.m@Linux 5.14.0-570.112.1.el9_6.x86_64:R 4.5.3/:memory:]
     ##    cell_id observation_joinid dataset_id        sample_id donor_id feature_count
     ##      <dbl> <chr>              <chr>             <chr>     <chr>            <int>
     ##  1    7951 V^DVv&wmix         ca46ffe6-0a26-4d… 86fbf754… Hs254            28675
@@ -64,26 +68,15 @@ metadata
     ## #   file_id_cellNexus_pseudobulk <chr>, count_upper_bound <dbl>, …
 
 [`keep_quality_cells()`](https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html)
-applies one gate and filters out bad quality cells from every sample. A
-cell is kept when `empty_droplet == FALSE`, `alive == TRUE`,
-`scDblFinder.class != "doublet"`, and `feature_count >= 5000`.
+applies one gate and filters out bad quality cells from every sample.
+This is a filter shortcut, which is equivalent to directly applying
+three filters to each sample:
+`empty_droplet == FALSE, alive == TRUE, scDblFinder.class != "doublet"`.
 
-![](images/quality-control.png)
-
-- An **empty droplet** (`empty_droplet == TRUE`) is liquid captured with
-  almost no cell in it. It still produces a few gene measurements, mostly
-  background. Counting it as a cell inflates the number of cells and adds
-  noise. The gate keeps `empty_droplet == FALSE`.
-- A **dead cell** (`alive == FALSE`) is detected by a high mitochondrial
-  percentage. The gate keeps `alive == TRUE`.
-- A **doublet** (`scDblFinder.class == "doublet"`) is two cells captured
-  together. Their measurements are mixed, so the row can look like a cell
-  type that does not exist. The gate keeps
-  `scDblFinder.class != "doublet"`.
-
-The same checks are computed for each sample. Detailed information on
-the procedure is the [cellNexus quality-control
-steps](https://cellnexus.org/#quality-control-steps).
+The same checks are computed for each sample. Detailed technical
+information on the quality-control procedure is available in the
+[cellNexus quality-control
+steps](https://cellnexus.org/#quality-control-steps) page.
 
 ## Choose cells by cell type
 
@@ -94,14 +87,13 @@ sample-level fields.
 Exploring the harmonised cell types in the atlas.
 
 ``` r
-
 metadata |>
   dplyr::distinct(cell_type_unified_ensemble) |>
   dplyr::arrange(cell_type_unified_ensemble)
 ```
 
     ## # Source:     SQL [?? x 1]
-    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
+    ## # Database:   DuckDB 1.4.3 [shen.m@Linux 5.14.0-570.112.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: cell_type_unified_ensemble
     ##    cell_type_unified_ensemble
     ##    <chr>                     
@@ -121,7 +113,6 @@ Filtering the atlas by epithelial cells and exploring the imputed
 ethnicities of the donors.
 
 ``` r
-
 metadata |>
   dplyr::filter(cell_type_unified_ensemble == "epithelial") |>
   dplyr::distinct(donor_id, imputed_ethnicity) |>
@@ -129,7 +120,7 @@ metadata |>
 ```
 
     ## # Source:     SQL [?? x 2]
-    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
+    ## # Database:   DuckDB 1.4.3 [shen.m@Linux 5.14.0-570.112.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: desc(n)
     ##    imputed_ethnicity              n
     ##    <chr>                      <dbl>
@@ -153,7 +144,6 @@ metadata |>
 Solution
 
 ``` r
-
 library(cellNexus)
 library(dplyr)
 
@@ -167,44 +157,98 @@ A label with a few dozen cells across the whole atlas will have a very
 wide composition interval. Drop it from the cell-type list, or accept
 that its estimate is descriptive.
 
-This case study uses nine respiratory reference studies in particular.
-[`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
-appends CELLxGENE Census demographic annotations such as `tissue`,
-`disease`, `sex`, `age_days`, etc to the metadata.
+This case study uses nine respiratory reference studies. Each study has
+a unique `dataset_id`.
 
 ``` r
-
-respiratory_dataset_ids()
+dataset_ids <- c(
+  "9f222629-9e39-47d0-b83f-e08d610c7479",
+  "093d3bfe-6f0f-4ac0-a7a1-829f94d0a49f",
+  "8c42cfd0-0b0a-46d5-910c-fc833d83c45e",
+  "53d208b0-2cfd-4366-9866-c3c6114081bc",
+  "3de0ad6d-4378-4f62-b37b-ec0b75a50d94",
+  "d8da613f-e681-4c69-b463-e94f5e66847f",
+  "e04daea4-4412-45b5-989e-76a9be070a89",
+  "2adb1f8a-a6b1-4909-8ee8-484814e2d4bf",
+  "2672b679-8048-4f5e-9786-f1b196ccfd08"
+)
 ```
-
-    ## [1] "9f222629-9e39-47d0-b83f-e08d610c7479"
-    ## [2] "093d3bfe-6f0f-4ac0-a7a1-829f94d0a49f"
-    ## [3] "8c42cfd0-0b0a-46d5-910c-fc833d83c45e"
-    ## [4] "53d208b0-2cfd-4366-9866-c3c6114081bc"
-    ## [5] "3de0ad6d-4378-4f62-b37b-ec0b75a50d94"
-    ## [6] "d8da613f-e681-4c69-b463-e94f5e66847f"
-    ## [7] "e04daea4-4412-45b5-989e-76a9be070a89"
-    ## [8] "2adb1f8a-a6b1-4909-8ee8-484814e2d4bf"
-    ## [9] "2672b679-8048-4f5e-9786-f1b196ccfd08"
 
 ## Query metadata by tissue
 
-``` r
+[`get_metadata()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html)
+does not carry original CELLxGENE annotations such as `tissue`,
+`disease`, `sex`, `assay`, `cell_type`, and `self_reported_ethnicity`.
+Join those columns onto
+[`get_metadata()`](https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html).
 
-dataset_ids <- respiratory_dataset_ids()
+The file below is the CELLxGENE Census `obs` table for snapshot
+`2024-07-01`, limited to these nine studies and to the columns this join
+uses. `cellxgene.census` does not run on Windows, so the workshop reads
+this parquet instead of opening the Census.
+
+- Register the Arrow table
+- This workshop - Read and join without registering
+
+`duckdb_register_arrow()` makes the Arrow table visible to the same
+DuckDB connection as `metadata`, so the join stays lazy.
+
+``` r
+census_metadata <- cellNexus::get_census_metadata("2024-07-01")
+con <- dbplyr::remote_con(metadata)
+duckdb::duckdb_register_arrow(con, "census_metadata", census_metadata)
+
 metadata_respiratory <- metadata |>
   dplyr::filter(dataset_id %in% dataset_ids) |>
-  join_census_tissue()
+  dplyr::left_join(
+    dplyr::tbl(con, "census_metadata") |>
+      dplyr::select(
+        observation_joinid, dataset_id, tissue,
+        self_reported_ethnicity, cell_type, assay,
+        disease, sex
+      ),
+    by = c("observation_joinid", "dataset_id")
+  )
+
+metadata_respiratory |>
+  dplyr::count(tissue, sort = TRUE)
+```
+
+Since `cellxgene.census` does not run on Windows, the workshop reads
+this parquet instead of opening the Census. Read the parquet as a data
+frame and join back to the metadata.
+
+``` r
+census_metadata <- arrow::read_parquet(
+  system.file(
+    "extdata",
+    "census_respiratory_2024-07-01.parquet",
+    package = "cellNexusWorkshop"
+  )
+)
+
+metadata_respiratory <- metadata |>
+  dplyr::filter(dataset_id %in% dataset_ids) |>
+  dplyr::left_join(
+    census_metadata |>
+      dplyr::select(
+        observation_joinid, dataset_id, tissue,
+        self_reported_ethnicity, cell_type, assay,
+        disease, sex
+      ),
+    by = c("observation_joinid", "dataset_id"),
+    copy = TRUE
+  )
 
 metadata_respiratory |>
   dplyr::count(tissue, sort = TRUE)
 ```
 
     ## # Source:     SQL [?? x 2]
-    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
+    ## # Database:   DuckDB 1.4.3 [shen.m@Linux 5.14.0-570.112.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: desc(n)
     ##    tissue                        n
-    ##    <chr>                     <dbl>
+    ##    <fct>                     <dbl>
     ##  1 lung                    1453396
     ##  2 lung parenchyma          306390
     ##  3 respiratory airway       267309
@@ -220,16 +264,15 @@ metadata_respiratory |>
 ## Query metadata by disease
 
 ``` r
-
 metadata_respiratory |>
   dplyr::count(disease, sort = TRUE)
 ```
 
     ## # Source:     SQL [?? x 2]
-    ## # Database:   DuckDB 1.4.3 [unknown@Linux 5.14.0-570.123.1.el9_6.x86_64:R 4.5.3/:memory:]
+    ## # Database:   DuckDB 1.4.3 [shen.m@Linux 5.14.0-570.112.1.el9_6.x86_64:R 4.5.3/:memory:]
     ## # Ordered by: desc(n)
     ##    disease                                     n
-    ##    <chr>                                   <dbl>
+    ##    <fct>                                   <dbl>
     ##  1 normal                                2251070
     ##  2 COVID-19                               355118
     ##  3 pulmonary fibrosis                     246542
@@ -249,24 +292,74 @@ metadata_respiratory |>
 
 ## Build the respiratory ageing cohort
 
-Immune and epithelial cell types are queried. Age is restricted to
-donors from 1 year up to 80 years, which drops perinatal samples and
-donors who would fall outside the age bins.
+This step keeps immune and epithelial labels, lung and airway tissues,
+and donors from 1 year up to 80 years.
+
+[`dplyr::collect()`](https://dplyr.tidyverse.org/reference/compute.html)
+runs the query. `dataset_id` is rewritten with underscores because a
+hyphenated UUID is not a legal name in a model formula. `age_years`,
+`age_binary`, and `age_bin` are derived here so the composition model
+and the expression model use the same donors. Samples with fewer than 50
+cells are dropped, and duplicate `observation_joinid` rows are removed.
+Every cell of every retained sample is kept. `sccomp` conditions on each
+sample’s total, and the expression model carries library size as a
+covariate, so equal-size subsampling would throw away precision.
 
 ``` r
+respiratory_tissues <- c(
+  "lung", "lung parenchyma", "alveolus of lung", "bronchus",
+  "respiratory airway", "pleura", "pleural effusion",
+  "middle lobe of right lung", "upper lobe of left lung",
+  "lower lobe of left lung", "upper lobe of right lung",
+  "lower lobe of right lung", "lingula of left lung",
+  "right lung", "left lung"
+)
 
-cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
+immune_cell_types <- c(
+  "cd16 mono", "nk", "mait", "cd14 mono", "cdc", "b memory", "pdc",
+  "nkt", "cd4 th1/th17 em", "plasma", "cd4 th17 em", "b naive", "macrophage",
+  "cd4 th2 em", "cd8 tcm", "cd8 naive", "cd8 tem", "tgd", "cd4 fh em",
+  "cd4 th1 em", "cd4 tem", "cd4 naive", "mast", "treg", "cd4 tcm", "granulocyte"
+)
+epithelial_cell_types <- c("epithelial", "pneumocyte", "secretory")
+cell_types_query <- c(immune_cell_types, epithelial_cell_types)
 
-obs_lung <- get_metadata() |>
-  keep_quality_cells() |>
+obs_lung <- metadata_respiratory |>
   dplyr::filter(
-    dataset_id %in% dataset_ids,
-    cell_type_unified_ensemble %in% cell_types_query,
+    cell_type_unified_ensemble %in% c(immune_cell_types, epithelial_cell_types),
+    tissue %in% respiratory_tissues,
     age_days >= 365,
     age_days < 80 * 365
   ) |>
-  join_census_tissue() |>
-  annotate_cell_nexus(min_cells_per_sample = 50)
+  dplyr::collect() |>
+  dplyr::mutate(
+    sample_id = as.character(sample_id),
+    dataset_id = gsub("-", "_", as.character(dataset_id), fixed = TRUE),
+    age_years = as.numeric(age_days / 365.25),
+    age_binary = age_years > 50,
+    age_bin = cut(
+      age_years,
+      breaks = c(0, 50, 80),
+      right = FALSE,
+      labels = c("20-49", "50-79")
+    )
+  )
+
+# Drop samples below 50 cells 
+obs_lung <- obs_lung |>
+  dplyr::filter(dplyr::n() >= 50, .by = sample_id) |>
+  dplyr::arrange(dataset_id, sample_id, observation_joinid) |>
+  dplyr::distinct(observation_joinid, .keep_all = TRUE)
+
+age_scaled <- obs_lung |>
+  dplyr::distinct(sample_id, age_years) |>
+  dplyr::mutate(
+    age_years_scaled_centered = as.numeric(scale(age_years)[, 1])
+  ) |>
+  dplyr::select(sample_id, age_years_scaled_centered)
+
+obs_lung <- obs_lung |>
+  dplyr::left_join(age_scaled, by = "sample_id")
 
 obs_lung |>
   dplyr::count(cell_type_unified_ensemble, name = "n_cells") |>
@@ -288,16 +381,6 @@ obs_lung |>
     ## 10 mast                         13578
     ## # ℹ 19 more rows
 
-[`join_census_tissue()`](https://myushen.github.io/cellNexusWorkshop/reference/join_census_tissue.md)
-attaches Census `tissue`.
-[`annotate_cell_nexus()`](https://myushen.github.io/cellNexusWorkshop/reference/annotate_cell_nexus.md)
-keeps the respiratory labels, collects the query, derives the age
-variables, drops samples with fewer than 50 cells, and de-duplicates on
-`observation_joinid`. Every cell of every retained sample is kept.
-`sccomp` conditions on each sample’s total, and the expression model
-carries library size as a covariate, so equal-size subsampling would
-throw away precision.
-
 `age_binary` is `TRUE` for donors older than 50 years. `age_bin` is the
 same split, labelled for plots. One encoding means the composition model
 and the expression model contrast the same donors. The boundary is a
@@ -312,7 +395,6 @@ studies sit at the extremes. A cell type with only a handful of cells
 will have an uninformative composition interval.
 
 ``` r
-
 p_age <- obs_lung |>
   dplyr::distinct(sample_id, age_years) |>
   ggplot(aes(age_years)) +
@@ -336,7 +418,6 @@ p_age + p_types & theme_bw()
 Solution
 
 ``` r
-
 obs_lung |>
   dplyr::distinct(sample_id, age_bin) |>
   dplyr::count(age_bin)
@@ -353,7 +434,6 @@ support the age term once `dataset_id` is in the model.
 Solution
 
 ``` r
-
 obs_lung |>
   dplyr::distinct(sample_id, dataset_id, age_binary) |>
   dplyr::count(dataset_id, age_binary) |>
@@ -363,8 +443,6 @@ obs_lung |>
 A study with a zero in either age class does not identify an age effect
 on its own. The fixed `dataset_id` term uses the studies that contain
 both classes.
-
-Keep this R session open. The next page uses `obs_lung`.
 
 Next: [Explore and
 visualise](https://myushen.github.io/cellNexusWorkshop/articles/explore_and_visualise.md).

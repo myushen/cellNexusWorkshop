@@ -38,7 +38,6 @@ before the first `sccomp` fit so the session does not stop on a
 compiler.
 
 ``` r
-
 install.packages("BiocManager")
 install.packages("remotes")
 Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
@@ -65,22 +64,12 @@ remotes::install_github("MangiolaLaboratory/sccomp")
 remotes::install_github("myushen/cellNexusWorkshop")
 ```
 
-From a clone of this repository, install the workshop package with
-`remotes::install_local(".", dependencies = FALSE)` after the packages
-above.
+The reusable script is
+[`inst/scripts/workshop_respiratory_ageing.R`](https://github.com/myushen/cellNexusWorkshop/blob/main/inst/scripts/workshop_respiratory_ageing.R).
 
-A Docker image that runs the same install is `Dockerfile`, based on
-`bioconductor/bioconductor_docker:devel`.
-
-Open the reusable script after installation:
-
-``` r
-
-file.edit(system.file(
-  "scripts", "workshop_respiratory_ageing.R",
-  package = "cellNexusWorkshop"
-))
-```
+The caches are already saved in the virtual environment, which greatly
+reduces the time spent downloading data and running the analyses during
+the session. Thanks to the workshop organisers.
 
 ## Workshop description
 
@@ -93,7 +82,8 @@ you from the Human Cell Atlas to these analyses.
 
 ### Pre-requisites
 
-- Basic R experience is preferred but not required. The articles show each command.
+- Basic R experience is preferred but not required. The articles show
+  each command.
 - A R 4.6 session with the packages above, and CmdStan installed
 
 ### Workshop participation
@@ -105,9 +95,9 @@ session. Each exercise has a solution hidden underneath it. The
 page collects the same answers.
 
 The website shows the code. Run it in R to see your own results. The
-figures already on the site are examples from a larger download (12,000
-cells, and a slower `sccomp` fit). During the session the download is
-capped at 12,000 cells and `sccomp` uses Hamiltonian Monte Carlo (hmc) for inference.
+figures on the site were generated ahead of time and saved in the cache,
+so the session does not wait on the download or the fit. Without that
+cache, the full workflow takes about 30 minutes.
 
 ### *R* / *Bioconductor* packages used
 
@@ -128,10 +118,10 @@ capped at 12,000 cells and `sccomp` uses Hamiltonian Monte Carlo (hmc) for infer
 
 ### Workshop goals and objectives
 
-Participants leave with a script that defines a cohort from cellNexus
-metadata, downloads the matching counts, and fits two donor-level
-models: cell-type composition, and gene expression within one epithelial
-cluster.
+Participants leave with a script that defines a cohort of Human Cell
+Atlas from cellNexus metadata, downloads the matching counts, and fits
+two donor-level models: cell-type composition, and gene expression
+within one epithelial cluster.
 
 #### Learning goals
 
@@ -187,13 +177,6 @@ cluster.
   <https://doi.org/10.1111/rssa.12378>
 
 ## Publish this site
-
-The articles are the package vignettes. GitHub Actions
-(`.github/workflows/rworkflows.yml`) builds the pkgdown site and deploys
-the `gh-pages` branch. In the repository settings, set GitHub Pages to
-that branch. The address is the `url` field in `_pkgdown.yml`. Change
-that URL, and the GitHub links, if the repository is published under a
-different account.
 
 Build the site locally with
 [`pkgdown::build_site()`](https://pkgdown.r-lib.org/reference/build_site.html).

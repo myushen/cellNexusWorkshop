@@ -65,28 +65,18 @@
 
     
     
-<p>Continue in the same session. This block fits a donor-level model of
-immune cell-type proportions with <code>sccomp</code> <span class="citation">(Mangiola et al. 2023)</span>.</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://myushen.github.io/cellNexusWorkshop">cellNexusWorkshop</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MangiolaLaboratory/sccomp" class="external-link">sccomp</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="kw">if</span> <span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/exists.html" class="external-link">exists</a></span><span class="op">(</span><span class="st">"obs_lung"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MangiolaLaboratory/cellNexus" class="external-link">cellNexus</a></span><span class="op">)</span></span>
-<span>  <span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/respiratory_dataset_ids.html">respiratory_dataset_ids</a></span><span class="op">(</span><span class="op">)</span></span>
-<span>  <span class="va">cell_types_query</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="../reference/immune_cell_types.html">immune_cell_types</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="../reference/epithelial_cell_types.html">epithelial_cell_types</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="va">obs_lung</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
-<span>      <span class="va">dataset_id</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">dataset_ids</span>,</span>
-<span>      <span class="va">cell_type_unified_ensemble</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">cell_types_query</span>,</span>
-<span>      <span class="va">age_days</span> <span class="op">&gt;=</span> <span class="fl">365</span>,</span>
-<span>      <span class="va">age_days</span> <span class="op">&lt;</span> <span class="fl">80</span> <span class="op">*</span> <span class="fl">365</span></span>
-<span>    <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/join_census_tissue.html">join_census_tissue</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>    <span class="fu"><a href="../reference/annotate_cell_nexus.html">annotate_cell_nexus</a></span><span class="op">(</span>min_cells_per_sample <span class="op">=</span> <span class="fl">50</span><span class="op">)</span></span>
-<span><span class="op">}</span></span></code></pre></div>
+<p>Source: <a href="https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/compositional_analysis.Rmd" class="external-link"><code>vignettes/compositional_analysis.Rmd</code></a></p>
+<p>Continue in the same session. This chapter assumes all variables from
+<a href="query_the_atlas.html">Query the atlas</a> and <a href="explore_and_visualise.html">Explore and visualise</a> are defined,
+and fits a donor-level model of immune cell-type proportions with
+<code>sccomp</code> <span class="citation">(Mangiola et al.
+2023)</span>.</p>
+<div class="section level2">
+<h2 id="introduction-to-sccomp">Introduction to sccomp<a class="anchor" aria-label="anchor" href="#introduction-to-sccomp"></a>
+</h2>
+<iframe src="https://docs.google.com/gview?url=https://raw.githubusercontent.com/myushen/cellNexusWorkshop/main/vignettes/BiocAsia_sccomp_Yingnan.pdf&amp;embedded=true" scrolling="yes" style="width:100%; height:600px;" frameborder="0">
+</iframe>
+</div>
 <div class="section level2">
 <h2 id="why-a-composition-model">Why a composition model<a class="anchor" aria-label="anchor" href="#why-a-composition-model"></a>
 </h2>
@@ -99,9 +89,9 @@ dissociation protocol as much as by biology, and including them would
 move the denominator of every immune proportion. <strong>Pseudobulk
 DE</strong> and UMAP validation filter the full table to
 <code>epithelial</code> instead.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_composition</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="../reference/immune_cell_types.html">immune_cell_types</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">immune_cell_types</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="co"># sccomp stores covariates in one column. A logical cannot share that</span></span>
 <span>  <span class="co"># column with a character study id. "FALSE" is the reference level.</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_binary <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">as.character</a></span><span class="op">(</span><span class="va">age_binary</span><span class="op">)</span><span class="op">)</span></span>
@@ -127,6 +117,7 @@ DE</strong> and UMAP validation filter the full table to
 <div class="section level2">
 <h2 id="fit">Fit<a class="anchor" aria-label="anchor" href="#fit"></a>
 </h2>
+<p>discribe what the formula is trying to do:</p>
 <p>The formula is <code>~ age_binary + dataset_id</code>.
 <code>sample_id</code> is the replicate.
 <code>cell_type_unified_ensemble</code> is the group.
@@ -134,36 +125,30 @@ DE</strong> and UMAP validation filter the full table to
 study.</p>
 <p><code>bimodal_mean_variability_association = TRUE</code> lets rare
 and abundant cell types follow different variability regimes.</p>
-<p>The session default is <code>pathfinder</code>, which is fast enough
-to finish in the room. A result you would report uses Hamiltonian Monte
-Carlo (<code>inference_method = "hmc"</code>). Pathfinder intervals are
-a working approximation. Refit with <code>"hmc"</code> before you quote
-an effect, and read the sampler diagnostics on that fit. Set
-<code>CELLNEXUS_WORKSHOP_INFERENCE=hmc</code> for that fit. The first
-call compiles the Stan model and can take several minutes on top of the
-fit.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">inference_method</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"CELLNEXUS_WORKSHOP_INFERENCE"</span>, <span class="st">"pathfinder"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">sccomp_res</span> <span class="op">&lt;-</span> <span class="va">obs_composition</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/sccomp/reference/sccomp_estimate.html" class="external-link">sccomp_estimate</a></span><span class="op">(</span></span>
+<p>This fit uses Hamiltonian Monte Carlo
+(<code>inference_method = "hmc"</code>). The first call compiles the
+Stan model. Read the sampler diagnostics on the fit before you quote an
+effect.</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">sccomp_res</span> <span class="op">&lt;-</span> <span class="va">obs_composition</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">sccomp_estimate</span><span class="op">(</span></span>
 <span>    formula_composition <span class="op">=</span> <span class="op">~</span> <span class="va">age_binary</span> <span class="op">+</span> <span class="va">dataset_id</span>,</span>
 <span>    sample <span class="op">=</span> <span class="st">"sample_id"</span>,</span>
 <span>    cell_group <span class="op">=</span> <span class="st">"cell_type_unified_ensemble"</span>,</span>
 <span>    bimodal_mean_variability_association <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>    inference_method <span class="op">=</span> <span class="va">inference_method</span>,</span>
+<span>    inference_method <span class="op">=</span> <span class="st">"hmc"</span>,</span>
 <span>    output_directory <span class="op">=</span> <span class="st">"/vast/scratch/users/shen.m/sccomp_draws_files"</span>,</span>
 <span>    cache_stan_model <span class="op">=</span> <span class="st">"/vast/scratch/users/shen.m/"</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/sccomp/reference/sccomp_remove_outliers.html" class="external-link">sccomp_remove_outliers</a></span><span class="op">(</span>output_directory <span class="op">=</span> <span class="st">"/vast/scratch/users/shen.m/sccomp_draws_files"</span>,</span>
+<span>  <span class="fu">sccomp_remove_outliers</span><span class="op">(</span>output_directory <span class="op">=</span> <span class="st">"/vast/scratch/users/shen.m/sccomp_draws_files"</span>,</span>
 <span>                         cache_stan_model <span class="op">=</span> <span class="st">"/vast/scratch/users/shen.m/"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/sccomp/reference/sccomp_test.html" class="external-link">sccomp_test</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu">sccomp_test</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>Outlier removal refits the model with aberrant samples down-weighted.
 Removal comes before the test, because the test reads the refitted
 model. Look at which samples were flagged before accepting the
 correction. A flag concentrated in one study is a finding of its
 own.</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sccomp_res</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">factor</span> <span class="op">==</span> <span class="st">"age_binary"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"c_"</span><span class="op">)</span>, <span class="va">c_FDR</span><span class="op">)</span></span></code></pre></div>
@@ -174,7 +159,7 @@ own.</p>
 <span><span class="co">##   Family: multi_beta_binomial </span></span>
 <span><span class="co">##   Composition formula: ~age_binary + dataset_id </span></span>
 <span><span class="co">##   Variability formula: ~1 </span></span>
-<span><span class="co">##   Inference method: pathfinder </span></span>
+<span><span class="co">##   Inference method: hmc </span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## Data: Samples: 327   Cell groups: 26 </span></span>
 <span><span class="co">## </span></span>
@@ -185,18 +170,18 @@ own.</p>
 <span><span class="co">##   scale reduction factor on split chains (at convergence, R_k_hat = 1).</span></span>
 <span><span class="co">## </span></span>
 <span><span class="co">## <span style="color: #949494;"># A tibble: 26 × 9</span></span></span>
-<span><span class="co">##    cell_type_unified_ensemble c_lower  c_effect c_upper    c_pH0    c_FDR c_rhat</span></span>
-<span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>     <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> b memory                   -<span style="color: #BB0000;">0.108</span>   0.105     0.331  0.487    0.175     1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> b naive                    -<span style="color: #BB0000;">0.407</span>  -<span style="color: #BB0000;">0.185</span>     0.042<span style="text-decoration: underline;">5</span> 0.233    0.089<span style="text-decoration: underline;">4</span>    1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> cd14 mono                   0.152   0.362     0.572  0.010<span style="text-decoration: underline;">0</span>   0.002<span style="text-decoration: underline;">10</span>   1.000</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> cd16 mono                  -<span style="color: #BB0000;">0.296</span>  -<span style="color: #BB0000;">0.050</span><span style="color: #BB0000; text-decoration: underline;">2</span>    0.193  0.660    0.251     1.000</span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> cd4 fh em                  -<span style="color: #BB0000;">0.306</span>  -<span style="color: #BB0000;">0.019</span><span style="color: #BB0000; text-decoration: underline;">8</span>    0.267  0.717    0.272     1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> cd4 naive                  -<span style="color: #BB0000;">0.142</span>   0.074<span style="text-decoration: underline;">1</span>    0.287  0.593    0.213     1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> cd4 tcm                     0.136   0.357     0.569  0.010<span style="text-decoration: underline;">5</span>   0.003<span style="text-decoration: underline;">50</span>   1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> cd4 tem                     0.354   0.601     0.859  0.000<span style="text-decoration: underline;">500</span> 0.000<span style="text-decoration: underline;">125</span>  1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> cd4 th1 em                 -<span style="color: #BB0000;">0.235</span>   0.000<span style="text-decoration: underline;">630</span>  0.233  0.800    0.327     1.00 </span></span>
-<span><span class="co">## <span style="color: #BCBCBC;">10</span> cd4 th1/th17 em            -<span style="color: #BB0000;">0.042</span><span style="color: #BB0000; text-decoration: underline;">4</span>  0.174     0.374  0.234    0.100     1.00 </span></span>
+<span><span class="co">##    cell_type_unified_ensemble c_lower c_effect c_upper   c_pH0   c_FDR c_rhat</span></span>
+<span><span class="co">##    <span style="color: #949494; font-style: italic;">&lt;chr&gt;</span>                        <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>    <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>   <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span>  <span style="color: #949494; font-style: italic;">&lt;dbl&gt;</span></span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 1</span> b memory                   -<span style="color: #BB0000;">0.281</span>   0.039<span style="text-decoration: underline;">8</span>    0.360 0.641   0.241     1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 2</span> b naive                    -<span style="color: #BB0000;">0.567</span>  -<span style="color: #BB0000;">0.225</span>     0.119 0.237   0.088<span style="text-decoration: underline;">9</span>    1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 3</span> cd14 mono                   0.114   0.351     0.584 0.019<span style="text-decoration: underline;">0</span>  0.007<span style="text-decoration: underline;">01</span>   1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 4</span> cd16 mono                  -<span style="color: #BB0000;">0.359</span>   0.003<span style="text-decoration: underline;">79</span>   0.369 0.690   0.300     1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 5</span> cd4 fh em                  -<span style="color: #BB0000;">0.281</span>   0.105     0.489 0.497   0.200     1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 6</span> cd4 naive                  -<span style="color: #BB0000;">0.317</span>   0.027<span style="text-decoration: underline;">1</span>    0.370 0.659   0.262     1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 7</span> cd4 tcm                     0.028<span style="text-decoration: underline;">5</span>  0.383     0.757 0.061<span style="text-decoration: underline;">1</span>  0.024<span style="text-decoration: underline;">9</span>    1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 8</span> cd4 tem                     0.199   0.724     1.32  0.007<span style="text-decoration: underline;">01</span> 0.003<span style="text-decoration: underline;">00</span>   1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;"> 9</span> cd4 th1 em                 -<span style="color: #BB0000;">0.311</span>   0.022<span style="text-decoration: underline;">7</span>    0.361 0.677   0.282     1.00</span></span>
+<span><span class="co">## <span style="color: #BCBCBC;">10</span> cd4 th1/th17 em            -<span style="color: #BB0000;">0.066</span><span style="color: #BB0000; text-decoration: underline;">7</span>  0.236     0.541 0.194   0.074<span style="text-decoration: underline;">1</span>    1.00</span></span>
 <span><span class="co">## <span style="color: #949494;"># ℹ 16 more rows</span></span></span>
 <span><span class="co">## <span style="color: #949494;"># ℹ 2 more variables: c_ess_bulk &lt;dbl&gt;, c_ess_tail &lt;dbl&gt;</span></span></span></code></pre>
 <p>Columns whose names start with <code>c_</code> carry the age effect,
@@ -217,27 +202,15 @@ study term has been regressed out, which is the visual counterpart of
 the model. The blue box is the posterior predictive check <span class="citation">(Gabry et al. 2019)</span>: the distribution of data
 the model would produce. Overlap between the observed points and that
 distribution is evidence that the model describes these data.</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://mangiolalaboratory.github.io/sccomp/reference/sccomp_boxplot.html" class="external-link">sccomp_boxplot</a></span><span class="op">(</span></span>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu">sccomp_boxplot</span><span class="op">(</span></span>
 <span>  <span class="va">sccomp_res</span>,</span>
 <span>  factor <span class="op">=</span> <span class="st">"age_binary"</span>,</span>
 <span>  significance_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  remove_unwanted_effects <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  cache_stan_model <span class="op">=</span> <span class="st">"/vast/scratch/users/shen.m/"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain, with 1 thread(s) per chain...</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## Chain 1  Elapsed Time: 10.329 seconds (Generated Quantities) </span></span>
-<span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>
-<pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain, with 1 thread(s) per chain...</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## Chain 1  Elapsed Time: 10.7 seconds (Generated Quantities) </span></span>
-<span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>
-<pre><code><span><span class="co">## Running standalone generated quantities after 1 MCMC chain, with 1 thread(s) per chain...</span></span>
-<span><span class="co">## </span></span>
-<span><span class="co">## Chain 1  Elapsed Time: 2.094 seconds (Generated Quantities) </span></span>
-<span><span class="co">## Chain 1 finished in 0.0 seconds.</span></span></code></pre>
-<p><img src="compositional_analysis_files/figure-html/composition-plot-1.png" class="r-plt" alt="" width="700"></p>
+<p><img src="../reference/figures/sccomp_boxplot.png" class="r-plt" alt="" width="700"></p>
 <blockquote>
 <p><strong>Exercise 6.</strong> Which cell types have
 <code>c_FDR &lt; 0.05</code> for <code>factor == "age_binary"</code>?
@@ -245,7 +218,7 @@ For each, is the estimated effect higher or lower in donors over 50?</p>
 </blockquote>
 <details><summary>
 Solution
-</summary><div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+</summary><div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sccomp_res</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">factor</span> <span class="op">==</span> <span class="st">"age_binary"</span>, <span class="va">c_FDR</span> <span class="op">&lt;</span> <span class="fl">0.05</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">starts_with</a></span><span class="op">(</span><span class="st">"c_"</span><span class="op">)</span>, <span class="va">c_FDR</span><span class="op">)</span></span></code></pre></div>
