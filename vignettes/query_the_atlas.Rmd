@@ -11,35 +11,28 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-r_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "..", "R")
 knitr::opts_chunk$set(
   echo = TRUE,
   eval = requireNamespace("pkgdown", quietly = TRUE) && pkgdown::in_pkgdown(),
   message = FALSE,
   warning = FALSE,
   cache = TRUE,
-  cache.path = "query_the_atlas_cache/",
-  cache.extra = tools::md5sum(file.path(
-    r_dir,
-    "select_de_cluster.R"
-  ))
+  cache.path = "query_the_atlas_cache/"
 )
 library(cellNexus)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
-library(cellNexusWorkshop)
 ```
 
 Source:
 [`vignettes/query_the_atlas.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/query_the_atlas.Rmd)
 
-This page is the script for the first block. Run the code in your R session, in order.
 
 This practice takes Human Cell Atlas data from CELLxGENE. Each study is a table of measurements at single cell level (one row per cell). cellNexus makes that query reusable and fast at the sample level. It also adds three cell-type labels with SingleR, using the Blueprint, Monaco, and Azimuth references. A harmonisation step then combines those three labels into one unified cell-type label for every cell. The diagram below shows the preprocessing steps, starting from the original CELLxGENE data.
 
 ```{r abstract-figure, echo=FALSE, eval=TRUE, out.width="420", fig.align="left"}
-knitr::include_graphics("images/abstract.png")
+knitr::include_graphics("../man/figures/abstract.png")
 ```
 
 ## Setup
@@ -49,15 +42,14 @@ library(cellNexus)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
-library(cellNexusWorkshop)
 ```
 
-`get_metadata()` returns a lazy DuckDB table. Filters stay in the query until something collects the rows, which is what makes an atlas of this size practical to subset.
+`get_metadata()` returns a lazy DuckDB table, and accepts `tidyverse` syntax to filter the data.
 
 
 ## Quality control
 ```{r quality-control-figure, echo=FALSE, eval=TRUE, out.width="100%", fig.align="left"}
-knitr::include_graphics("images/quality-control.png")
+knitr::include_graphics("../man/figures/quality-control.png")
 ```
 
 * An **empty droplet** is liquid captured with almost no cell in it. It still produces a few gene measurements, mostly background. Counting it as a cell inflates the number of cells and adds noise.
@@ -133,21 +125,18 @@ dataset_ids <- c(
 )
 ```
 
-## Query metadata by tissue
+## Query metadata by tissue {.tabset}
 
-`get_metadata()` does not carry original CELLxGENE annotations such as `tissue`, `disease`, `sex`, `assay`, `cell_type`, and `self_reported_ethnicity`. Register the Census table in DuckDB and join those columns onto `get_metadata()`.
+`get_metadata()` does not carry original CELLxGENE annotations such as `tissue`, `disease`, `sex`, `assay`, `cell_type`, and `self_reported_ethnicity`. Join those columns onto `get_metadata()`.
 
 The file below is the CELLxGENE Census `obs` table for snapshot `2024-07-01`, limited to these nine studies and to the columns this join uses. `cellxgene.census` does not run on Windows, so the workshop reads this parquet instead of opening the Census.
 
-```{r}
-census_metadata <- arrow::read_parquet(
-  system.file(
-    "extdata",
-    "census_respiratory_2024-07-01.parquet",
-    package = "cellNexusWorkshop"
-  ),
-  as_data_frame = FALSE
-)
+### Register the Arrow table
+
+`duckdb_register_arrow()` makes the Arrow table visible to the same DuckDB connection as `metadata`, so the join stays lazy.
+
+```{r, eval=FALSE}
+census_metadata <- cellNexus::get_census_metadata("2024-07-01")
 con <- dbplyr::remote_con(metadata)
 duckdb::duckdb_register_arrow(con, "census_metadata", census_metadata)
 
@@ -166,6 +155,37 @@ metadata_respiratory <- metadata |>
 metadata_respiratory |>
   dplyr::count(tissue, sort = TRUE)
 ```
+
+### This workshop - Read and join without registering
+
+Since `cellxgene.census` does not run on Windows, the workshop reads this parquet instead of opening the Census. Read the parquet as a data frame and join back to the metadata.
+
+```{r}
+census_metadata <- arrow::read_parquet(
+  system.file(
+    "extdata",
+    "census_respiratory_2024-07-01.parquet",
+    package = "cellNexusWorkshop"
+  )
+)
+
+metadata_respiratory <- metadata |>
+  dplyr::filter(dataset_id %in% dataset_ids) |>
+  dplyr::left_join(
+    census_metadata |>
+      dplyr::select(
+        observation_joinid, dataset_id, tissue,
+        self_reported_ethnicity, cell_type, assay,
+        disease, sex
+      ),
+    by = c("observation_joinid", "dataset_id"),
+    copy = TRUE
+  )
+
+metadata_respiratory |>
+  dplyr::count(tissue, sort = TRUE)
+```
+
 
 ## Query metadata by disease
 
@@ -220,7 +240,7 @@ obs_lung <- metadata_respiratory |>
     )
   )
 
-# Subsample to 50 cells per sample  
+# Drop samples below 50 cells 
 obs_lung <- obs_lung |>
   dplyr::filter(dplyr::n() >= 50, .by = sample_id) |>
   dplyr::arrange(dataset_id, sample_id, observation_joinid) |>
@@ -241,11 +261,26 @@ obs_lung |>
   dplyr::arrange(dplyr::desc(n_cells))
 ```
 
+```{r, include=FALSE, eval=FALSE}
+extdata_dir <- file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "inst", "extdata"
+)
+dir.create(extdata_dir, recursive = TRUE, showWarnings = FALSE)
+saveRDS(obs_lung, file.path(extdata_dir, "obs_lung.rds"), compress = "xz")
+```
+
 `age_binary` is `TRUE` for donors older than 50 years. `age_bin` is the same split, labelled for plots. One encoding means the composition model and the expression model contrast the same donors. The boundary is a modelling choice: report it, and check that both sides are populated.
 
 ## Inspect the cohort before modelling
 
 Look at the age histogram and the cell-type bar chart before fitting a model. Both age classes should contain donors. Ages clumped into two distant groups will make a continuous age slope rest on whichever studies sit at the extremes. A cell type with only a handful of cells will have an uninformative composition interval.
+
+```{r, include=FALSE, eval=TRUE}
+obs_lung <- readRDS(
+  system.file("extdata", "obs_lung.rds", package = "cellNexusWorkshop")
+)
+```
 
 ```{r manifest-plot}
 p_age <- obs_lung |>

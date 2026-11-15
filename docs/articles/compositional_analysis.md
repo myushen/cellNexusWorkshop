@@ -3,31 +3,15 @@
 Source:
 [`vignettes/compositional_analysis.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/compositional_analysis.Rmd)
 
-Continue in the same session. This block fits a donor-level model of
-immune cell-type proportions with `sccomp` (Mangiola et al. 2023).
+Continue in the same session. This chapter assumes all variables from
+[Query the
+atlas](https://myushen.github.io/cellNexusWorkshop/articles/query_the_atlas.md)
+and [Explore and
+visualise](https://myushen.github.io/cellNexusWorkshop/articles/explore_and_visualise.md)
+are defined, and fits a donor-level model of immune cell-type
+proportions with `sccomp` (Mangiola et al. 2023).
 
-``` r
-
-library(dplyr)
-library(cellNexusWorkshop)
-library(sccomp)
-
-if (!exists("obs_lung")) {
-  library(cellNexus)
-  dataset_ids <- respiratory_dataset_ids()
-  cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
-  obs_lung <- get_metadata() |>
-    keep_quality_cells() |>
-    dplyr::filter(
-      dataset_id %in% dataset_ids,
-      cell_type_unified_ensemble %in% cell_types_query,
-      age_days >= 365,
-      age_days < 80 * 365
-    ) |>
-    join_census_tissue() |>
-    annotate_cell_nexus(min_cells_per_sample = 50)
-}
-```
+## Introduction to sccomp
 
 ## Why a composition model
 
@@ -40,9 +24,8 @@ them would move the denominator of every immune proportion. **Pseudobulk
 DE** and UMAP validation filter the full table to `epithelial` instead.
 
 ``` r
-
 obs_composition <- obs_lung |>
-  dplyr::filter(cell_type_unified_ensemble %in% immune_cell_types()) |>
+  dplyr::filter(cell_type_unified_ensemble %in% immune_cell_types) |>
   # sccomp stores covariates in one column. A logical cannot share that
   # column with a character study id. "FALSE" is the reference level.
   dplyr::mutate(age_binary = as.character(age_binary))
@@ -69,6 +52,8 @@ obs_composition |>
 
 ## Fit
 
+discribe what the formula is trying to do:
+
 The formula is `~ age_binary + dataset_id`. `sample_id` is the
 replicate. `cell_type_unified_ensemble` is the group. `dataset_id` is a
 fixed effect, so the age contrast is within study.
@@ -76,25 +61,18 @@ fixed effect, so the age contrast is within study.
 `bimodal_mean_variability_association = TRUE` lets rare and abundant
 cell types follow different variability regimes.
 
-The session default is `pathfinder`, which is fast enough to finish in
-the room. A result you would report uses Hamiltonian Monte Carlo
-(`inference_method = "hmc"`). Pathfinder intervals are a working
-approximation. Refit with `"hmc"` before you quote an effect, and read
-the sampler diagnostics on that fit. Set
-`CELLNEXUS_WORKSHOP_INFERENCE=hmc` for that fit. The first call compiles
-the Stan model and can take several minutes on top of the fit.
+This fit uses Hamiltonian Monte Carlo (`inference_method = "hmc"`). The
+first call compiles the Stan model. Read the sampler diagnostics on the
+fit before you quote an effect.
 
 ``` r
-
-inference_method <- Sys.getenv("CELLNEXUS_WORKSHOP_INFERENCE", "pathfinder")
-
 sccomp_res <- obs_composition |>
   sccomp_estimate(
     formula_composition = ~ age_binary + dataset_id,
     sample = "sample_id",
     cell_group = "cell_type_unified_ensemble",
     bimodal_mean_variability_association = TRUE,
-    inference_method = inference_method,
+    inference_method = "hmc",
     output_directory = "/vast/scratch/users/shen.m/sccomp_draws_files",
     cache_stan_model = "/vast/scratch/users/shen.m/"
   ) |>
@@ -109,7 +87,6 @@ model. Look at which samples were flagged before accepting the
 correction. A flag concentrated in one study is a finding of its own.
 
 ``` r
-
 sccomp_res |>
   dplyr::filter(factor == "age_binary") |>
   dplyr::select(cell_type_unified_ensemble, dplyr::starts_with("c_"), c_FDR)
@@ -122,7 +99,7 @@ sccomp_res |>
     ##   Family: multi_beta_binomial 
     ##   Composition formula: ~age_binary + dataset_id 
     ##   Variability formula: ~1 
-    ##   Inference method: pathfinder 
+    ##   Inference method: hmc 
     ## 
     ## Data: Samples: 327   Cell groups: 26 
     ## 
@@ -133,18 +110,18 @@ sccomp_res |>
     ##   scale reduction factor on split chains (at convergence, R_k_hat = 1).
     ## 
     ## # A tibble: 26 × 9
-    ##    cell_type_unified_ensemble c_lower  c_effect c_upper    c_pH0    c_FDR c_rhat
-    ##    <chr>                        <dbl>     <dbl>   <dbl>    <dbl>    <dbl>  <dbl>
-    ##  1 b memory                   -0.108   0.105     0.331  0.487    0.175     1.00 
-    ##  2 b naive                    -0.407  -0.185     0.0425 0.233    0.0894    1.00 
-    ##  3 cd14 mono                   0.152   0.362     0.572  0.0100   0.00210   1.000
-    ##  4 cd16 mono                  -0.296  -0.0502    0.193  0.660    0.251     1.000
-    ##  5 cd4 fh em                  -0.306  -0.0198    0.267  0.717    0.272     1.00 
-    ##  6 cd4 naive                  -0.142   0.0741    0.287  0.593    0.213     1.00 
-    ##  7 cd4 tcm                     0.136   0.357     0.569  0.0105   0.00350   1.00 
-    ##  8 cd4 tem                     0.354   0.601     0.859  0.000500 0.000125  1.00 
-    ##  9 cd4 th1 em                 -0.235   0.000630  0.233  0.800    0.327     1.00 
-    ## 10 cd4 th1/th17 em            -0.0424  0.174     0.374  0.234    0.100     1.00 
+    ##    cell_type_unified_ensemble c_lower c_effect c_upper   c_pH0   c_FDR c_rhat
+    ##    <chr>                        <dbl>    <dbl>   <dbl>   <dbl>   <dbl>  <dbl>
+    ##  1 b memory                   -0.281   0.0398    0.360 0.641   0.241     1.00
+    ##  2 b naive                    -0.567  -0.225     0.119 0.237   0.0889    1.00
+    ##  3 cd14 mono                   0.114   0.351     0.584 0.0190  0.00701   1.00
+    ##  4 cd16 mono                  -0.359   0.00379   0.369 0.690   0.300     1.00
+    ##  5 cd4 fh em                  -0.281   0.105     0.489 0.497   0.200     1.00
+    ##  6 cd4 naive                  -0.317   0.0271    0.370 0.659   0.262     1.00
+    ##  7 cd4 tcm                     0.0285  0.383     0.757 0.0611  0.0249    1.00
+    ##  8 cd4 tem                     0.199   0.724     1.32  0.00701 0.00300   1.00
+    ##  9 cd4 th1 em                 -0.311   0.0227    0.361 0.677   0.282     1.00
+    ## 10 cd4 th1/th17 em            -0.0667  0.236     0.541 0.194   0.0741    1.00
     ## # ℹ 16 more rows
     ## # ℹ 2 more variables: c_ess_bulk <dbl>, c_ess_tail <dbl>
 
@@ -168,7 +145,6 @@ observed points and that distribution is evidence that the model
 describes these data.
 
 ``` r
-
 sccomp_boxplot(
   sccomp_res,
   factor = "age_binary",
@@ -178,22 +154,7 @@ sccomp_boxplot(
 )
 ```
 
-    ## Running standalone generated quantities after 1 MCMC chain, with 1 thread(s) per chain...
-    ## 
-    ## Chain 1  Elapsed Time: 10.329 seconds (Generated Quantities) 
-    ## Chain 1 finished in 0.0 seconds.
-
-    ## Running standalone generated quantities after 1 MCMC chain, with 1 thread(s) per chain...
-    ## 
-    ## Chain 1  Elapsed Time: 10.7 seconds (Generated Quantities) 
-    ## Chain 1 finished in 0.0 seconds.
-
-    ## Running standalone generated quantities after 1 MCMC chain, with 1 thread(s) per chain...
-    ## 
-    ## Chain 1  Elapsed Time: 2.094 seconds (Generated Quantities) 
-    ## Chain 1 finished in 0.0 seconds.
-
-![](compositional_analysis_files/figure-html/composition-plot-1.png)
+![](../reference/figures/sccomp_boxplot.png)
 
 > **Exercise 6.** Which cell types have `c_FDR < 0.05` for
 > `factor == "age_binary"`? For each, is the estimated effect higher or
@@ -202,7 +163,6 @@ sccomp_boxplot(
 Solution
 
 ``` r
-
 sccomp_res |>
   dplyr::filter(factor == "age_binary", c_FDR < 0.05) |>
   dplyr::select(cell_type_unified_ensemble, dplyr::starts_with("c_"), c_FDR)

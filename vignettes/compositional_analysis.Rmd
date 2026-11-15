@@ -14,22 +14,16 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-r_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "..", "R")
 knitr::opts_chunk$set(
   echo = TRUE,
   eval = requireNamespace("pkgdown", quietly = TRUE) && pkgdown::in_pkgdown(),
   message = FALSE,
   warning = FALSE,
   cache = TRUE,
-  cache.path = "compositional_analysis_cache/",
-  cache.extra = tools::md5sum(file.path(
-    r_dir,
-    "select_de_cluster.R"
-  ))
+  cache.path = "compositional_analysis_cache/"
 )
 library(dplyr)
 library(cellNexus)
-library(cellNexusWorkshop)
 library(sccomp)
 ```
 
@@ -46,6 +40,19 @@ Continue in the same session. This chapter assumes all variables from [Query the
 ## Why a composition model
 
 This step quantifies age-associated shifts in **cell-type composition** on the immune subset of `obs_lung` (`obs_composition`): one donor-level simplex per sample over the immune types of the **same nine respiratory studies**. Epithelial types are excluded here because their capture is driven by dissociation protocol as much as by biology, and including them would move the denominator of every immune proportion. **Pseudobulk DE** and UMAP validation filter the full table to `epithelial` instead.
+
+```{r, include=FALSE, eval=TRUE}
+obs_lung <- readRDS(
+  system.file("extdata", "obs_lung.rds", package = "cellNexusWorkshop")
+)
+
+immune_cell_types <- c(
+  "cd16 mono", "nk", "mait", "cd14 mono", "cdc", "b memory", "pdc",
+  "nkt", "cd4 th1/th17 em", "plasma", "cd4 th17 em", "b naive", "macrophage",
+  "cd4 th2 em", "cd8 tcm", "cd8 naive", "cd8 tem", "tgd", "cd4 fh em",
+  "cd4 th1 em", "cd4 tem", "cd4 naive", "mast", "treg", "cd4 tcm", "granulocyte"
+)
+```
 
 ```{r}
 obs_composition <- obs_lung |>
@@ -69,7 +76,7 @@ The formula is `~ age_binary + dataset_id`. `sample_id` is the replicate. `cell_
 
 This fit uses Hamiltonian Monte Carlo (`inference_method = "hmc"`). The first call compiles the Stan model. Read the sampler diagnostics on the fit before you quote an effect. 
 
-```{r results="hide"}
+```{r results="hide", eval=FALSE}
 sccomp_res <- obs_composition |>
   sccomp_estimate(
     formula_composition = ~ age_binary + dataset_id,
@@ -83,6 +90,13 @@ sccomp_res <- obs_composition |>
   sccomp_remove_outliers(output_directory = "/vast/scratch/users/shen.m/sccomp_draws_files",
                          cache_stan_model = "/vast/scratch/users/shen.m/") |>
   sccomp_test()
+```
+
+```{r include=FALSE, eval=TRUE}
+sccomp_res <- readRDS(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "inst", "extdata", "sccomp_res.rds"
+))
 ```
 
 Outlier removal refits the model with aberrant samples down-weighted. Removal comes before the test, because the test reads the refitted model. Look at which samples were flagged before accepting the correction. A flag concentrated in one study is a finding of its own.
@@ -101,7 +115,7 @@ An effect is a change in share. Because shares sum to one, one real change produ
 
 `age_binary` has two levels, so the summary is a boxplot. `remove_unwanted_effects = TRUE` shows proportions after the study term has been regressed out, which is the visual counterpart of the model. The blue box is the posterior predictive check [@gabry2019visualization]: the distribution of data the model would produce. Overlap between the observed points and that distribution is evidence that the model describes these data.
 
-```{r composition-plot}
+```{r composition-plot, eval=FALSE}
 sccomp_boxplot(
   sccomp_res,
   factor = "age_binary",
@@ -111,6 +125,12 @@ sccomp_boxplot(
 )
 ```
 
+```{r composition-plot-saved, echo=FALSE, eval=TRUE}
+knitr::include_graphics(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "man", "figures", "sccomp_boxplot.png"
+))
+```
 
 > **Exercise 6.** Which cell types have `c_FDR < 0.05` for `factor == "age_binary"`? For each, is the estimated effect higher or lower in donors over 50?
 

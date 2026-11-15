@@ -8,7 +8,6 @@
 #   vignette gene_expression
 
 library(cellNexus)
-library(cellNexusWorkshop)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
@@ -60,20 +59,19 @@ census_path <- system.file(
 if (!nzchar(census_path)) {
   census_path <- "inst/extdata/census_respiratory_2024-07-01.parquet"
 }
-census_metadata <- arrow::read_parquet(census_path, as_data_frame = FALSE)
-con <- dbplyr::remote_con(metadata)
-duckdb::duckdb_register_arrow(con, "census_metadata", census_metadata)
+census_metadata <- arrow::read_parquet(census_path)
 
 metadata_respiratory <- metadata |>
   dplyr::filter(dataset_id %in% dataset_ids) |>
   dplyr::left_join(
-    dplyr::tbl(con, "census_metadata") |>
+    census_metadata |>
       dplyr::select(
         observation_joinid, dataset_id, tissue,
         self_reported_ethnicity, cell_type, assay,
         disease, sex
       ),
-    by = c("observation_joinid", "dataset_id")
+    by = c("observation_joinid", "dataset_id"),
+    copy = TRUE
   )
 
 respiratory_tissues <- c(
@@ -97,11 +95,11 @@ cell_types_query <- c(immune_cell_types, epithelial_cell_types)
 obs_lung <- metadata_respiratory |>
   dplyr::filter(
     cell_type_unified_ensemble %in% c(immune_cell_types, epithelial_cell_types),
+    tissue %in% respiratory_tissues,
     age_days >= 365,
     age_days < 80 * 365
   ) |>
   dplyr::collect() |>
-  dplyr::filter(tissue %in% respiratory_tissues) |># Bypass duckdb arrow scan because tissue is in cellxgene.census
   dplyr::mutate(
     sample_id = as.character(sample_id),
     dataset_id = gsub("-", "_", as.character(dataset_id), fixed = TRUE),
@@ -132,6 +130,11 @@ obs_lung <- obs_lung |>
   dplyr::select(cell_id, dataset_id, sample_id, donor_id, atlas_id,
                 dplyr::matches("age|file_id|ethnicity|cell_type|disease|sex|tissue|assay") )
 
+if (file.exists("DESCRIPTION") && any(grepl("^Package: cellNexusWorkshop", readLines("DESCRIPTION", n = 5)))) {
+  dir.create("inst/extdata", showWarnings = FALSE, recursive = TRUE)
+  saveRDS(obs_lung, "inst/extdata/obs_lung.rds", compress = "xz")
+}
+
 # ---- 2. Explore and visualise -----------------------------------------------
 
 max_cells_qc <- 12000L
@@ -152,12 +155,8 @@ sampled_qc <- obs_lung |>
 sce_qc <- sampled_qc |>
   get_single_cell_experiment(assays = "counts")
 
-if (file.exists("DESCRIPTION") && any(grepl("^Package: cellNexusWorkshop", readLines("DESCRIPTION", n = 5)))) {
-  dir.create("inst/extdata", showWarnings = FALSE, recursive = TRUE)
-  # Counts are HDF5-backed. Copy them into memory before saveRDS.
-  sce_qc <- DelayedArray::realize(sce_qc)
-  saveRDS(sce_qc, "inst/extdata/sce_qc.rds", compress = "xz")
-}
+sce_qc <- DelayedArray::realize(sce_qc)
+saveRDS(sce_qc, "inst/extdata/sce_qc.rds", compress = "xz")
 
 sce_qc
 
@@ -179,10 +178,25 @@ sce_qc <- sce_qc |>
   runUMAP(dimred = "HARMONY", n_neighbors = 15)
 
 cd45_id <- "ENSG00000081237"
-sce_qc$cd45 <- as.numeric(logcounts(sce_qc)[cd45_id, ]) # Reports Error because cd45_id cannot find in object feature. cellNexus takes intersect genes from samples
-
 sce_cd45 <- sampled_qc |>
-  get_single_cell_experiment(assays = "counts", features = "ENSG00000081237")
+  get_single_cell_experiment(assays = "counts", features = cd45_id)
+
+sce_qc$cd45 <- NA_real_
+i <- match(colnames(sce_qc), colnames(sce_cd45))
+sce_qc$cd45[!is.na(i)] <- log1p(
+  as.numeric(SummarizedExperiment::assay(sce_cd45, "counts")[1, i[!is.na(i)]])
+)
+rm(sce_cd45)
+
+saveRDS(sce_qc, "inst/extdata/sce_qc_batch_corrected.rds", compress = "xz")
+
+sce_qc |>
+  ggplot(aes(UMAP1, UMAP2, colour = cd45)) +
+  geom_point(size = 0.3, alpha = 0.6) +
+  scale_colour_viridis_c(option = "magma") +
+  coord_equal() +
+  theme_bw() +
+  labs(colour = "CD45 (PTPRC)")
 
 # Demonstration of get seurat object from one study
 one_study <- obs_lung |>
@@ -213,6 +227,8 @@ sccomp_res <- obs_composition |>
     cache_stan_model = "/vast/scratch/users/shen.m/"
   ) |>
   sccomp_test()
+
+saveRDS(sccomp_res, "inst/extdata/sccomp_res.rds", compress = "xz")
 
 sccomp_boxplot(
   sccomp_res,
@@ -282,13 +298,73 @@ pb_se <- pb_se |>
 
 de_design <- ~ age_binary + log_cell_count + dataset_id
 
-epi_cluster_screen <- select_de_cluster(
-  pb_se,
-  de_design,
-  min_cells_per_class = 100L,
-  min_samples_per_class = 4L
+min_cells_per_class <- 150L
+min_samples_per_class <- 5L
+min_cell_fraction <- 0.25
+min_datasets_spanning_age <- 2L
+
+epi_cluster_screen <- as.data.frame(SummarizedExperiment::colData(pb_se)) |>
+  dplyr::mutate(
+    epi_cluster = as.character(epi_cluster),
+    is_old = as.logical(age_binary)
+  ) |>
+  dplyr::summarise(
+    n_pseudobulk = dplyr::n(),
+    n_cells = sum(ncells),
+    n_cells_young = sum(ncells[!is_old]),
+    n_cells_old = sum(ncells[is_old]),
+    n_samples_young = dplyr::n_distinct(sample_id[!is_old]),
+    n_samples_old = dplyr::n_distinct(sample_id[is_old]),
+    n_datasets = dplyr::n_distinct(dataset_id),
+    n_datasets_spanning_age = sum(
+      tapply(is_old, factor(as.character(dataset_id)), dplyr::n_distinct) == 2L,
+      na.rm = TRUE
+    ),
+    .by = epi_cluster
+  )
+
+epi_cluster_screen$full_rank <- vapply(
+  epi_cluster_screen$epi_cluster,
+  function(cl) {
+    se <- pb_se[, pb_se$epi_cluster == cl]
+    se <- se[, Matrix::colSums(SummarizedExperiment::assay(se, "counts")) > 0]
+    cd <- droplevels(as.data.frame(SummarizedExperiment::colData(se)))
+    mm <- try(stats::model.matrix(de_design, data = cd), silent = TRUE)
+    !inherits(mm, "try-error") && qr(mm)$rank == ncol(mm)
+  },
+  logical(1)
 )
-epi_cluster_de_top <- epi_cluster_screen$cluster
+
+epi_cluster_screen <- epi_cluster_screen |>
+  dplyr::mutate(
+    frac_young = n_cells_young / pmax(n_cells, 1),
+    frac_old = n_cells_old / pmax(n_cells, 1),
+    eligible =
+      n_cells_young >= min_cells_per_class &
+      n_cells_old >= min_cells_per_class &
+      n_samples_young >= min_samples_per_class &
+      n_samples_old >= min_samples_per_class &
+      frac_young >= min_cell_fraction &
+      frac_old >= min_cell_fraction &
+      n_datasets_spanning_age >= min_datasets_spanning_age &
+      full_rank
+  ) |>
+  dplyr::arrange(
+    dplyr::desc(eligible),
+    dplyr::desc(n_datasets_spanning_age),
+    dplyr::desc(n_pseudobulk),
+    epi_cluster
+  )
+
+if (!any(epi_cluster_screen$eligible)) {
+  stop(
+    "No epithelial cluster can support this design. ",
+    "Clusters are either too small, too unbalanced, or their studies each ",
+    "supply a single age class."
+  )
+}
+
+epi_cluster_de_top <- epi_cluster_screen$epi_cluster[[1]]
 
 pb_se <- pb_se[, pb_se$epi_cluster == epi_cluster_de_top]
 pb_se <- pb_se[, Matrix::colSums(assay(pb_se, "counts")) > 0]
@@ -321,6 +397,8 @@ pb_se <- pb_se |>
     method = "limma_remove_batch_effect"
   )
 
+saveRDS(pb_se, "inst/extdata/pb_se.rds", compress = "xz")
+
 de_results <- rowData(pb_se) |>
   tibble::as_tibble(rownames = ".feature") |>
   dplyr::mutate(
@@ -346,9 +424,25 @@ signature_down <- de_results |>
 sce <- sce_epi |>
   dplyr::filter(epi_cluster == epi_cluster_de_top)
 
-rank_mat <- rankGenes(as.matrix(assay(sce, "logcounts")))
-sce$aging_signature_score <- simpleScore(
+
+rank_mat <- singscore::rankGenes(as.matrix(assay(sce, "logcounts")))
+sce$aging_signature_score <- singscore::simpleScore(
   rank_mat,
   upSet = signature_up$.feature,
   downSet = if (nrow(signature_down) > 0) signature_down$.feature else NULL
 )$TotalScore
+
+sce |>
+  ggplot(aes(UMAP1, UMAP2, colour = aging_signature_score)) +
+  geom_point(size = 0.3, alpha = 0.6) +
+  scale_colour_viridis_c(option = "magma") +
+  facet_wrap(~ age_bin, ncol = 2) +
+  coord_equal() +
+  theme_bw() +
+  labs(colour = "Ageing score", title = paste("Cluster", epi_cluster_de_top))
+
+sce |>
+  ggplot(aes(aging_signature_score, fill = age_bin, colour = age_bin)) +
+  geom_density(alpha = 0.35, linewidth = 0.6) +
+  theme_bw() +
+  labs(x = "Ageing signature score", y = "Density", fill = "Age", colour = "Age")

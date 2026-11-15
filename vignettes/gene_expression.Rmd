@@ -11,21 +11,15 @@ vignette: >
 ---
 
 ```{r setup, include=FALSE}
-r_dir <- file.path(dirname(knitr::current_input(dir = TRUE)), "..", "R")
 knitr::opts_chunk$set(
   echo = TRUE,
   eval = requireNamespace("pkgdown", quietly = TRUE) && pkgdown::in_pkgdown(),
   message = FALSE,
   warning = FALSE,
   cache = TRUE,
-  cache.path = "gene_expression_cache/",
-  cache.extra = tools::md5sum(file.path(
-    r_dir,
-    "select_de_cluster.R"
-  ))
+  cache.path = "gene_expression_cache/"
 )
 library(cellNexus)
-library(cellNexusWorkshop)
 library(dplyr)
 library(ggplot2)
 library(scater)
@@ -71,7 +65,13 @@ We integrate the epithelial cells and cut the embedding into six clusters, and t
 
 The example subset to 12000 epithelial cells. [Harmony](https://github.com/immunogenomics/harmony) here is for clustering and the UMAP. The counts still carry study effects, and the model below still includes `dataset_id`.
 
-```{r}
+```{r, include=FALSE, eval=TRUE}
+obs_lung <- readRDS(
+  system.file("extdata", "obs_lung.rds", package = "cellNexusWorkshop")
+)
+```
+
+```{r eval=FALSE}
 epi_cell_cap <- 12000L
 min_cells_pb <- 10L
 
@@ -109,9 +109,10 @@ sce_epi$epi_cluster <- factor(paste0(
     BLUSPARAM = KmeansParam(centers = 6L)
   )
 ))
+# base::saveRDS(sce_epi, "./inst/extdata/sce_epi.rds", compress = "xz")
 ```
 
-```{r epi-umap}
+```{r epi-umap, eval=FALSE}
 sce_epi |>
   ggplot(aes(UMAP1, UMAP2, colour = epi_cluster)) +
   geom_point(size = 0.3, alpha = 0.6) +
@@ -119,12 +120,19 @@ sce_epi |>
   theme_bw()
 ```
 
+```{r epi-umap-plot, echo=FALSE, eval=TRUE}
+knitr::include_graphics(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "man", "figures", "epi-umap.png"
+))
+```
+
 ## Aggregate sample-by-cluster pseudobulk
 
 `aggregateAcrossCells.se()` sums raw counts within each sample and cluster. The column `ncells` is the number of cells that entered each pseudobulk. Profiles with fewer than 10 cells are dropped. `log_cell_count` is a scaled depth covariate so profiles built from different numbers of cells are comparable.
 
 
-```{r}
+```{r eval=FALSE}
 pb_se <- scrapper::aggregateAcrossCells.se(
   sce_epi,
   factors = list(
@@ -145,31 +153,99 @@ pb_se <- pb_se |>
 pb_se
 ```
 
+```{r include=FALSE, eval=TRUE}
+pb_se <- readRDS(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "inst", "extdata", "pb_se.rds"
+))
+pb_se
+```
+
 ## Choose a cluster and fit the age model
 
-`select_de_cluster()` keeps clusters in which both age classes are represented and the design can separate age from study. It prefers the cluster supported by the most studies that contribute both age classes. The default screen asks for 150 cells and 5 samples in each class. A 4000-cell cap may need the slightly lower thresholds below. If the function stops, read the printed screen and lower `min_samples_per_class` and rebuild `pb_se`.
+k-means labels change with the seed and the cell cap, so the cluster for the age model is chosen from a screen. A cluster qualifies when both age classes have enough cells and samples, neither class is a small fraction of the cluster, at least two studies contribute both age classes, and the design matrix has full rank. Full rank is the check that age is not the same thing as study: if every study in a cluster supplies only one age class, the age coefficient cannot be separated from `dataset_id`. Eligible clusters are sorted by how many studies span both ages, then by the number of pseudobulk profiles. The first row is the cluster that is tested. The thresholds here are 150 cells and 5 samples in each class. If the screen has no eligible row, lower a threshold and rebuild it.
 
 ```{r}
 de_design <- ~ age_binary + log_cell_count + dataset_id
 
-epi_cluster_screen <- select_de_cluster(
-  pb_se,
-  de_design,
-  min_cells_per_class = 100L,
-  min_samples_per_class = 4L
+min_cells_per_class <- 150L
+min_samples_per_class <- 5L
+min_cell_fraction <- 0.25
+min_datasets_spanning_age <- 2L
+
+epi_cluster_screen <- as.data.frame(SummarizedExperiment::colData(pb_se)) |>
+  dplyr::mutate(
+    epi_cluster = as.character(epi_cluster),
+    is_old = as.logical(age_binary)
+  ) |>
+  dplyr::summarise(
+    n_pseudobulk = dplyr::n(),
+    n_cells = sum(ncells),
+    n_cells_young = sum(ncells[!is_old]),
+    n_cells_old = sum(ncells[is_old]),
+    n_samples_young = dplyr::n_distinct(sample_id[!is_old]),
+    n_samples_old = dplyr::n_distinct(sample_id[is_old]),
+    n_datasets = dplyr::n_distinct(dataset_id),
+    n_datasets_spanning_age = sum(
+      tapply(is_old, factor(as.character(dataset_id)), dplyr::n_distinct) == 2L,
+      na.rm = TRUE
+    ),
+    .by = epi_cluster
+  )
+
+epi_cluster_screen$full_rank <- vapply(
+  epi_cluster_screen$epi_cluster,
+  function(cl) {
+    se <- pb_se[, pb_se$epi_cluster == cl]
+    se <- se[, Matrix::colSums(SummarizedExperiment::assay(se, "counts")) > 0]
+    cd <- droplevels(as.data.frame(SummarizedExperiment::colData(se)))
+    mm <- try(stats::model.matrix(de_design, data = cd), silent = TRUE)
+    !inherits(mm, "try-error") && qr(mm)$rank == ncol(mm)
+  },
+  logical(1)
 )
-epi_cluster_de_top <- epi_cluster_screen$cluster
-epi_cluster_screen$screen
+
+epi_cluster_screen <- epi_cluster_screen |>
+  dplyr::mutate(
+    frac_young = n_cells_young / pmax(n_cells, 1),
+    frac_old = n_cells_old / pmax(n_cells, 1),
+    eligible =
+      n_cells_young >= min_cells_per_class &
+      n_cells_old >= min_cells_per_class &
+      n_samples_young >= min_samples_per_class &
+      n_samples_old >= min_samples_per_class &
+      frac_young >= min_cell_fraction &
+      frac_old >= min_cell_fraction &
+      n_datasets_spanning_age >= min_datasets_spanning_age &
+      full_rank
+  ) |>
+  dplyr::arrange(
+    dplyr::desc(eligible),
+    dplyr::desc(n_datasets_spanning_age),
+    dplyr::desc(n_pseudobulk),
+    epi_cluster
+  )
+
+if (!any(epi_cluster_screen$eligible)) {
+  stop(
+    "No epithelial cluster can support this design. ",
+    "Clusters are either too small, too unbalanced, or their studies each ",
+    "supply a single age class."
+  )
+}
+
+epi_cluster_de_top <- epi_cluster_screen$epi_cluster[[1]]
+epi_cluster_screen
 ```
 
-> **Exercise 7.** From `epi_cluster_screen$screen`, which cluster was chosen? How many studies in that cluster contribute both age classes (`n_datasets_spanning_age`)? Quote the screen table with the result. The label alone is not reproducible.
+> **Exercise 7.** From `epi_cluster_screen`, which cluster was chosen? How many studies in that cluster contribute both age classes (`n_datasets_spanning_age`)? Quote the screen table with the result. The label alone is not reproducible.
 
 <details>
 <summary>Solution</summary>
 
 ```r
 epi_cluster_de_top
-epi_cluster_screen$screen
+epi_cluster_screen
 ```
 
 The chosen row is the first row of the screen after eligible clusters are sorted by `n_datasets_spanning_age`, then by the number of pseudobulk profiles. Quote `n_datasets_spanning_age` for that row. A value of 1 means the age term rests on a single study.
@@ -281,6 +357,13 @@ ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
 ## Score the signature on single cells
 
 Next we score the signature back onto single cells using [singscore](https://github.com/DavisLaboratory/singscore) [@foroutan2018singscore], which uses rank averages to score the signature. Zero is a cell with no net signature, and a depleted cell stays below zero.
+
+```{r, include=FALSE, eval=TRUE}
+sce_epi <- readRDS(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "inst", "extdata", "sce_epi.rds"
+))
+```
 
 ```{r}
 library(singscore)

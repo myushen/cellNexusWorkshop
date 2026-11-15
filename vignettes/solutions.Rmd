@@ -92,7 +92,7 @@ Read the sign of the effect column together with the boxplot. The contrast is do
 
 ```{r}
 epi_cluster_de_top
-epi_cluster_screen$screen
+epi_cluster_screen
 ```
 
 The chosen row is the first row of the screen after eligible clusters are sorted by `n_datasets_spanning_age`, then by the number of pseudobulk profiles. Quote `n_datasets_spanning_age` for that row. A value of 1 means the age term rests on a single study.

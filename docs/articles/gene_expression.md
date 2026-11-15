@@ -5,75 +5,45 @@ Source:
 
 Continue in the same session. This block integrates epithelial cells,
 aggregates sample-by-cluster pseudobulk, and tests donor-level age
-effects with DESeq2 through tidybulk (Love et al. 2014). The last
-section scores the resulting signature back onto single cells (Foroutan
-et al. 2018).
+effects with DESeq2 through
+[tidybulk](https://github.com/stemangiola/tidybulk) (Love, Huber, and
+Anders 2014). The last section scores the resulting signature back onto
+single cells using
+[singscore](https://github.com/DavisLaboratory/singscore) (Foroutan et
+al. 2018).
 
 The reusable script for everything you have run is installed with the
 package:
 
 ``` r
-
 file.edit(system.file(
   "scripts", "workshop_respiratory_ageing.R",
   package = "cellNexusWorkshop"
 ))
 ```
 
-``` r
+## Why gene expression
 
-library(cellNexus)
-library(cellNexusWorkshop)
-library(dplyr)
-library(ggplot2)
-library(scater)
-library(scuttle)
-library(scran)
-library(scrapper)
-library(bluster)
-library(harmony)
-library(SingleCellExperiment)
-library(SummarizedExperiment)
-library(Matrix)
-library(tidySingleCellExperiment)
-library(tidySummarizedExperiment)
-library(tidybulk)
-library(AnnotationDbi)
-library(org.Hs.eg.db)
-library(stringr)
-library(DESeq2)
-
-if (!exists("obs_lung")) {
-  dataset_ids <- respiratory_dataset_ids()
-  cell_types_query <- c(immune_cell_types(), epithelial_cell_types())
-  obs_lung <- get_metadata() |>
-    keep_quality_cells() |>
-    dplyr::filter(
-      dataset_id %in% dataset_ids,
-      cell_type_unified_ensemble %in% cell_types_query,
-      age_days >= 365,
-      age_days < 80 * 365
-    ) |>
-    join_census_tissue() |>
-    annotate_cell_nexus(min_cells_per_sample = 50)
-}
-```
+`epithelial` is one broad label. Ciliated, secretory, basal, and
+alveolar cells all sit inside it, so a single expression average mixes
+cell types that are not the same. The aim of this block is to split
+those cells into smaller clusters, and to use marker genes to decide
+whether that split is a real set of smaller cell types. A cluster is
+identified by the genes that mark it.
 
 ## Integrate and cluster the epithelial compartment
 
-The broad label `epithelial` mixes ciliated, secretory, basal, and
-alveolar states. We integrate cells, cut the embedding into six
+We integrate the epithelial cells and cut the embedding into six
 clusters, and test age inside the cluster that can support the design.
 
-The download is capped by `CELLNEXUS_WORKSHOP_MAX_CELLS`. The example
-figures use 12000 cells. Harmony here is for clustering and the UMAP.
-The counts still carry study effects, and the model below still includes
-`dataset_id`.
+The example subset to 12000 epithelial cells.
+[Harmony](https://github.com/immunogenomics/harmony) here is for
+clustering and the UMAP. The counts still carry study effects, and the
+model below still includes `dataset_id`.
 
 ``` r
-
-epi_cell_cap <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MAX_CELLS", "12000"))
-min_cells_pb <- as.integer(Sys.getenv("CELLNEXUS_WORKSHOP_MIN_CELLS_PB", "10"))
+epi_cell_cap <- 12000L
+min_cells_pb <- 10L
 
 set.seed(42)
 epi_cells <- obs_lung |>
@@ -109,10 +79,10 @@ sce_epi$epi_cluster <- factor(paste0(
     BLUSPARAM = KmeansParam(centers = 6L)
   )
 ))
+# base::saveRDS(sce_epi, "./inst/extdata/sce_epi.rds", compress = "xz")
 ```
 
 ``` r
-
 sce_epi |>
   ggplot(aes(UMAP1, UMAP2, colour = epi_cluster)) +
   geom_point(size = 0.3, alpha = 0.6) +
@@ -120,22 +90,17 @@ sce_epi |>
   theme_bw()
 ```
 
-![](gene_expression_files/figure-html/epi-umap-1.png)
-
-k-means labels are arbitrary. `E1` in your session is not `E1` in the
-example figure. The next section chooses the cluster from a screen,
-which you report alongside the label.
+![](../reference/figures/epi-umap.png)
 
 ## Aggregate sample-by-cluster pseudobulk
 
-[`aggregateAcrossCells.se()`](https://rdrr.io/pkg/scrapper/man/aggregateAcrossCells.se.html)
-sums raw counts within each sample and cluster. The column `ncells` is
-the number of cells that entered each pseudobulk. Profiles with fewer
-than 10 cells are dropped. `log_cell_count` is a scaled depth covariate
-so profiles built from different numbers of cells are comparable.
+`aggregateAcrossCells.se()` sums raw counts within each sample and
+cluster. The column `ncells` is the number of cells that entered each
+pseudobulk. Profiles with fewer than 10 cells are dropped.
+`log_cell_count` is a scaled depth covariate so profiles built from
+different numbers of cells are comparable.
 
 ``` r
-
 pb_se <- scrapper::aggregateAcrossCells.se(
   sce_epi,
   factors = list(
@@ -156,79 +121,110 @@ pb_se <- pb_se |>
 pb_se
 ```
 
-    ## class: RangedSummarizedExperiment 
-    ## dim: 16315 239 
-    ## metadata(3): aggregated latest_filter_scope_report
-    ##   latest_mutate_scope_report
-    ## assays(2): counts detected
-    ## rownames(16315): ENSG00000144837 ENSG00000187554 ... ENSG00000120539
-    ##   ENSG00000205420
-    ## rowData names(0):
-    ## colnames(239): 1 7 ... 775 776
-    ## colData names(50): factor.sample_id factor.epi_cluster ... epi_cluster
-    ##   log_cell_count
-
 ## Choose a cluster and fit the age model
 
-[`select_de_cluster()`](https://myushen.github.io/cellNexusWorkshop/reference/select_de_cluster.md)
-keeps clusters in which both age classes are represented and the design
-can separate age from study. It prefers the cluster supported by the
-most studies that contribute both age classes. The default screen asks
-for 150 cells and 5 samples in each class. A 4000-cell cap may need the
-slightly lower thresholds below. If the function stops, read the printed
-screen and lower `min_samples_per_class`, or raise
-`CELLNEXUS_WORKSHOP_MAX_CELLS` and rebuild `pb_se`.
+k-means labels change with the seed and the cell cap, so the cluster for
+the age model is chosen from a screen. A cluster qualifies when both age
+classes have enough cells and samples, neither class is a small fraction
+of the cluster, at least two studies contribute both age classes, and
+the design matrix has full rank. Full rank is the check that age is not
+the same thing as study: if every study in a cluster supplies only one
+age class, the age coefficient cannot be separated from `dataset_id`.
+Eligible clusters are sorted by how many studies span both ages, then by
+the number of pseudobulk profiles. The first row is the cluster that is
+tested. The thresholds here are 150 cells and 5 samples in each class.
+If the screen has no eligible row, lower a threshold and rebuild it.
 
 ``` r
-
 de_design <- ~ age_binary + log_cell_count + dataset_id
-de_contrast <- list(c("age_binary", "old", "young"))
-de_log2_fold_change_threshold <- 1
-de_signature_max_genes <- 25L
 
-epi_cluster_screen <- select_de_cluster(
-  pb_se,
-  de_design,
-  min_cells_per_class = 100L,
-  min_samples_per_class = 4L
+min_cells_per_class <- 150L
+min_samples_per_class <- 5L
+min_cell_fraction <- 0.25
+min_datasets_spanning_age <- 2L
+
+epi_cluster_screen <- as.data.frame(SummarizedExperiment::colData(pb_se)) |>
+  dplyr::mutate(
+    epi_cluster = as.character(epi_cluster),
+    is_old = as.logical(age_binary)
+  ) |>
+  dplyr::summarise(
+    n_pseudobulk = dplyr::n(),
+    n_cells = sum(ncells),
+    n_cells_young = sum(ncells[!is_old]),
+    n_cells_old = sum(ncells[is_old]),
+    n_samples_young = dplyr::n_distinct(sample_id[!is_old]),
+    n_samples_old = dplyr::n_distinct(sample_id[is_old]),
+    n_datasets = dplyr::n_distinct(dataset_id),
+    n_datasets_spanning_age = sum(
+      tapply(is_old, factor(as.character(dataset_id)), dplyr::n_distinct) == 2L,
+      na.rm = TRUE
+    ),
+    .by = epi_cluster
+  )
+
+epi_cluster_screen$full_rank <- vapply(
+  epi_cluster_screen$epi_cluster,
+  function(cl) {
+    se <- pb_se[, pb_se$epi_cluster == cl]
+    se <- se[, Matrix::colSums(SummarizedExperiment::assay(se, "counts")) > 0]
+    cd <- droplevels(as.data.frame(SummarizedExperiment::colData(se)))
+    mm <- try(stats::model.matrix(de_design, data = cd), silent = TRUE)
+    !inherits(mm, "try-error") && qr(mm)$rank == ncol(mm)
+  },
+  logical(1)
 )
-epi_cluster_de_top <- epi_cluster_screen$cluster
-epi_cluster_screen$screen
+
+epi_cluster_screen <- epi_cluster_screen |>
+  dplyr::mutate(
+    frac_young = n_cells_young / pmax(n_cells, 1),
+    frac_old = n_cells_old / pmax(n_cells, 1),
+    eligible =
+      n_cells_young >= min_cells_per_class &
+      n_cells_old >= min_cells_per_class &
+      n_samples_young >= min_samples_per_class &
+      n_samples_old >= min_samples_per_class &
+      frac_young >= min_cell_fraction &
+      frac_old >= min_cell_fraction &
+      n_datasets_spanning_age >= min_datasets_spanning_age &
+      full_rank
+  ) |>
+  dplyr::arrange(
+    dplyr::desc(eligible),
+    dplyr::desc(n_datasets_spanning_age),
+    dplyr::desc(n_pseudobulk),
+    epi_cluster
+  )
+
+if (!any(epi_cluster_screen$eligible)) {
+  stop(
+    "No epithelial cluster can support this design. ",
+    "Clusters are either too small, too unbalanced, or their studies each ",
+    "supply a single age class."
+  )
+}
+
+epi_cluster_de_top <- epi_cluster_screen$epi_cluster[[1]]
+epi_cluster_screen
 ```
 
     ##   epi_cluster n_pseudobulk n_cells n_cells_young n_cells_old n_samples_young
     ## 1          E2           59    1882          1054         828              31
-    ## 2          E1           46    1506           933         573              27
-    ## 3          E5           41     898           596         302              27
-    ## 4          E3           39    3093           928        2165              18
-    ## 5          E6           26    2418          2042         376              18
-    ## 6          E4           28     569           184         385               8
-    ##   n_samples_old n_datasets n_datasets_spanning_age frac_young  frac_old
-    ## 1            28          5                       3  0.5600425 0.4399575
-    ## 2            19          5                       1  0.6195219 0.3804781
-    ## 3            14          3                       1  0.6636971 0.3363029
-    ## 4            21          3                       1  0.3000323 0.6999677
-    ## 5             8          4                       1  0.8444996 0.1555004
-    ## 6            20          4                       0  0.3233743 0.6766257
-    ##   full_rank eligible
-    ## 1      TRUE     TRUE
-    ## 2      TRUE    FALSE
-    ## 3      TRUE    FALSE
-    ## 4      TRUE    FALSE
-    ## 5      TRUE    FALSE
-    ## 6     FALSE    FALSE
+    ##   n_samples_old n_datasets n_datasets_spanning_age full_rank frac_young
+    ## 1            28          5                       3      TRUE  0.5600425
+    ##    frac_old eligible
+    ## 1 0.4399575     TRUE
 
-> **Exercise 7.** From `epi_cluster_screen$screen`, which cluster was
-> chosen? How many studies in that cluster contribute both age classes
+> **Exercise 7.** From `epi_cluster_screen`, which cluster was chosen?
+> How many studies in that cluster contribute both age classes
 > (`n_datasets_spanning_age`)? Quote the screen table with the result.
 > The label alone is not reproducible.
 
 Solution
 
 ``` r
-
 epi_cluster_de_top
-epi_cluster_screen$screen
+epi_cluster_screen
 ```
 
 The chosen row is the first row of the screen after eligible clusters
@@ -248,7 +244,6 @@ the profiles, evaluated with respect to age, so a gene expressed in one
 age class survives.
 
 ``` r
-
 pb_se <- pb_se[, pb_se$epi_cluster == epi_cluster_de_top]
 pb_se <- pb_se[, Matrix::colSums(assay(pb_se, "counts")) > 0]
 
@@ -268,10 +263,10 @@ pb_se <- pb_se |>
   ) |>
   test_differential_expression(
     de_design,
-    contrasts = de_contrast,
+    contrasts = list(c("age_binary", "old", "young")),
     method = "DESeq2",
     omit_contrast_in_colnames = TRUE,
-    test_above_log2_fold_change = de_log2_fold_change_threshold,
+    test_above_log2_fold_change = 1,
     sfType = "poscounts"
   ) |>
   adjust_abundance(
@@ -283,12 +278,10 @@ pb_se <- pb_se |>
 
     ## Coefficients not estimable: dataset_ide04daea4_4412_45b5_989e_76a9be070a89
 
-Marker boxplots use tidybulk
-[`adjust_abundance()`](https://rdrr.io/pkg/tidybulk/man/adjust_abundance-methods.html)
+Marker boxplots use tidybulk `adjust_abundance()`
 (`limma_remove_batch_effect`) on the selected cluster’s pseudobulks.
 
 ``` r
-
 de_results <- rowData(pb_se) |>
   tibble::as_tibble(rownames = ".feature") |>
   dplyr::mutate(
@@ -305,11 +298,11 @@ de_results <- rowData(pb_se) |>
 
 signature_up <- de_results |>
   dplyr::filter(pvalue < 0.05, log2FoldChange > 0) |>
-  dplyr::slice_min(pvalue, n = de_signature_max_genes)
+  dplyr::slice_min(pvalue, n = 25)
 
 signature_down <- de_results |>
   dplyr::filter(pvalue < 0.05, log2FoldChange < 0) |>
-  dplyr::slice_min(pvalue, n = de_signature_max_genes)
+  dplyr::slice_min(pvalue, n = 25)
 
 signature_up
 ```
@@ -331,7 +324,6 @@ direction. It is a gene set for scoring. A claim about an individual
 gene needs the false-discovery column as well. Report both.
 
 ``` r
-
 marker_genes <- dplyr::bind_rows(
   dplyr::mutate(signature_up, direction = "up"),
   dplyr::mutate(signature_down, direction = "down")
@@ -344,7 +336,6 @@ marker_plot_df <- pb_se[marker_genes$.feature, ] |>
 ```
 
 ``` r
-
 ggplot(marker_plot_df, aes(age_bin, log1p(counts_adjusted), fill = age_bin)) +
   geom_boxplot(outlier.size = 0.4, width = 0.65) +
   facet_wrap(~ gene_symbol + direction, scales = "free_y", ncol = 6) +
@@ -372,21 +363,12 @@ sits lower, the factor levels and the contrast disagree.
 
 ## Score the signature on single cells
 
-If time remains. The score is a rank average (Foroutan et al. 2018): the
-mean rank of the up genes minus the mean rank of the down genes, on the
-cells of the cluster that was tested. Zero is a cell with no net
-signature, and a depleted cell stays below zero. A shift between age
-classes is expected, because the genes were chosen on these donors.
-Treat it as a consistency check: a reversed or empty shift means a
-reversed contrast, the wrong cluster, or an identifier mismatch. If the
-high scores sit in one corner of the UMAP, the cluster still mixes cell
-states. Report how many signature genes were found in the matrix.
-Ensembl identifiers with a version suffix are a common way to lose most
-of the set. Generalisation needs donors held out before gene selection,
-or another cohort.
+Next we score the signature back onto single cells using
+[singscore](https://github.com/DavisLaboratory/singscore) (Foroutan et
+al. 2018), which uses rank averages to score the signature. Zero is a
+cell with no net signature, and a depleted cell stays below zero.
 
 ``` r
-
 library(singscore)
 
 sce <- sce_epi |>
@@ -396,23 +378,13 @@ rank_mat <- rankGenes(as.matrix(assay(sce, "logcounts")))
 sce$aging_signature_score <- simpleScore(
   rank_mat,
   upSet = signature_up$.feature,
+  # A threshold test can leave one direction empty; simpleScore needs NULL,
+  # not a zero-length vector, and then scores on the up set alone.
   downSet = if (nrow(signature_down) > 0) signature_down$.feature else NULL
 )$TotalScore
-
-mean(signature_up$.feature %in% rownames(sce))
 ```
 
-    ## [1] 1
-
 ``` r
-
-mean(signature_down$.feature %in% rownames(sce))
-```
-
-    ## [1] 1
-
-``` r
-
 sce |>
   ggplot(aes(UMAP1, UMAP2, colour = aging_signature_score)) +
   geom_point(size = 0.3, alpha = 0.6) +
@@ -423,10 +395,9 @@ sce |>
   labs(colour = "Ageing score", title = paste("Cluster", epi_cluster_de_top))
 ```
 
-![](gene_expression_files/figure-html/unnamed-chunk-10-1.png)
+![](gene_expression_files/figure-html/unnamed-chunk-12-1.png)
 
 ``` r
-
 sce |>
   ggplot(aes(aging_signature_score, fill = age_bin, colour = age_bin)) +
   geom_density(alpha = 0.35, linewidth = 0.6) +
@@ -434,21 +405,4 @@ sce |>
   labs(x = "Ageing signature score", y = "Density", fill = "Age", colour = "Age")
 ```
 
-![](gene_expression_files/figure-html/unnamed-chunk-11-1.png)
-
-## What you now have
-
-One session, from a cellNexus query to two donor-level answers:
-
-- whether immune proportions differ between donors under and over 50, at
-  fixed study (`sccomp_res`)
-- whether epithelial transcription in one cluster differs between those
-  same donors (`de_results`)
-
-Save the script from
-`system.file("scripts", "workshop_respiratory_ageing.R", package = "cellNexusWorkshop")`.
-Changing the dataset list, the cell-type vectors, or the age cut is how
-the same workflow moves to another tissue or another question.
-
-Solutions:
-[Solutions](https://myushen.github.io/cellNexusWorkshop/articles/solutions.md).
+![](gene_expression_files/figure-html/unnamed-chunk-13-1.png)

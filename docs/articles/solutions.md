@@ -1,6 +1,7 @@
 # Solutions
 
-Source: [`vignettes/solutions.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/solutions.Rmd)
+Source:
+[`vignettes/solutions.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/solutions.Rmd)
 
 The same answers are hidden under each exercise. This page collects them
 in one place.
@@ -15,7 +16,6 @@ expressions print.
 Cells per harmonised label for donors older than 50 years.
 
 ``` r
-
 library(cellNexus)
 library(dplyr)
 
@@ -32,7 +32,6 @@ that its estimate is descriptive.
 ## Exercise 2
 
 ``` r
-
 obs_lung |>
   dplyr::distinct(sample_id, age_bin) |>
   dplyr::count(age_bin)
@@ -44,7 +43,6 @@ support the age term once `dataset_id` is in the model.
 ## Exercise 3
 
 ``` r
-
 obs_lung |>
   dplyr::distinct(sample_id, dataset_id, age_binary) |>
   dplyr::count(dataset_id, age_binary) |>
@@ -58,7 +56,6 @@ both classes.
 ## Exercise 4
 
 ``` r
-
 sce_qc |>
   ggplot2::ggplot(ggplot2::aes(UMAP1, UMAP2, colour = dataset_id)) +
   ggplot2::geom_point(size = 0.3, alpha = 0.6) +
@@ -74,13 +71,10 @@ were not adjusted.
 ## Exercise 5
 
 ``` r
-
-library(cellNexusWorkshop)
-
 sce_qc |>
   dplyr::count(cell_type_unified_ensemble, sort = TRUE)
 
-setdiff(immune_cell_types(), unique(sce_qc$cell_type_unified_ensemble))
+setdiff(immune_cell_types, unique(sce_qc$cell_type_unified_ensemble))
 ```
 
 Labels missing from this subsample are absent because of the cap, not
@@ -91,7 +85,6 @@ Fitting `sccomp` on `sce_qc` would estimate the subsample.
 ## Exercise 6
 
 ``` r
-
 sccomp_res |>
   dplyr::filter(factor == "age_binary", c_FDR < 0.05) |>
   dplyr::select(cell_type_unified_ensemble, dplyr::starts_with("c_"), c_FDR)
@@ -105,9 +98,8 @@ first.
 ## Exercise 7
 
 ``` r
-
 epi_cluster_de_top
-epi_cluster_screen$screen
+epi_cluster_screen
 ```
 
 The chosen row is the first row of the screen after eligible clusters

@@ -65,6 +65,7 @@
 
     
     
+<p>Source: <a href="https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/solutions.Rmd" class="external-link"><code>vignettes/solutions.Rmd</code></a></p>
 <p>The same answers are hidden under each exercise. This page collects
 them in one place.</p>
 <p>Run these in the session that produced <code>obs_lung</code>,
@@ -129,12 +130,10 @@ counts were not adjusted.</p>
 <h2 id="exercise-5">Exercise 5<a class="anchor" aria-label="anchor" href="#exercise-5"></a>
 </h2>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://myushen.github.io/cellNexusWorkshop">cellNexusWorkshop</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">sce_qc</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">sce_qc</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="fu"><a href="../reference/immune_cell_types.html">immune_cell_types</a></span><span class="op">(</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/pkg/BiocGenerics/man/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">sce_qc</span><span class="op">$</span><span class="va">cell_type_unified_ensemble</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="https://generics.r-lib.org/reference/setops.html" class="external-link">setdiff</a></span><span class="op">(</span><span class="va">immune_cell_types</span>, <span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">sce_qc</span><span class="op">$</span><span class="va">cell_type_unified_ensemble</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <p>Labels missing from this subsample are absent because of the cap, not
 because they are absent from <code>obs_lung</code>. Composition in the
 next article is fit on <code>obs_lung</code>, which keeps every cell of
@@ -158,7 +157,7 @@ stored as character with <code>"FALSE"</code> first.</p>
 </h2>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">epi_cluster_de_top</span></span>
-<span><span class="va">epi_cluster_screen</span><span class="op">$</span><span class="va">screen</span></span></code></pre></div>
+<span><span class="va">epi_cluster_screen</span></span></code></pre></div>
 <p>The chosen row is the first row of the screen after eligible clusters
 are sorted by <code>n_datasets_spanning_age</code>, then by the number
 of pseudobulk profiles. Quote <code>n_datasets_spanning_age</code> for

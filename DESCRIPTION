@@ -24,11 +24,6 @@ BugReports: https://github.com/myushen/cellNexusWorkshop/issues
 Encoding: UTF-8
 Depends:
     R (>= 4.5.0)
-Imports:
-    dplyr,
-    Matrix,
-    stats,
-    SummarizedExperiment
 Suggests:
     arrow,
     cellNexus,

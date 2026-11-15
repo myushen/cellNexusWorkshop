@@ -18,14 +18,9 @@ knitr::opts_chunk$set(
   message = FALSE,
   warning = FALSE,
   cache = TRUE,
-  cache.path = "explore_and_visualise_cache/",
-  cache.extra = tools::md5sum(file.path(
-    r_dir,
-    "select_de_cluster.R"
-  ))
+  cache.path = "explore_and_visualise_cache/"
 )
 library(cellNexus)
-library(cellNexusWorkshop)
 library(dplyr)
 library(ggplot2)
 library(scater)
@@ -48,8 +43,13 @@ Continue in the session from [Query the atlas](query_the_atlas.html). This chapt
 
 In this workshop, cells are subsampled within sample, and the number of samples is capped, so a few large libraries do not dominate the highly variable genes. It caps the download at 12,000 cells, and one sample does not exceed 100 cells.
 
+```{r, include=FALSE, eval=TRUE}
+obs_lung <- readRDS(
+  system.file("extdata", "obs_lung.rds", package = "cellNexusWorkshop")
+)
+```
 
-```{r}
+```{r, eval=FALSE}
 max_cells_qc <- 12000L
 cells_per_sample_qc <- 100L
 n_samples_qc <- 120L
@@ -71,21 +71,20 @@ sce_qc
 ```
 
 ```{r, include=FALSE, eval=FALSE}
-extdata_dir <- file.path(r_dir, "..", "inst", "extdata")
-dir.create(extdata_dir, recursive = TRUE, showWarnings = FALSE)
-sce_qc <- DelayedArray::realize(sce_qc)
-saveRDS(sce_qc, file.path(extdata_dir, "sce_qc.rds"), compress = "xz")
+base::saveRDS(sce_qc, "./inst/extdata/sce_qc.rds", compress = "xz")
 ```
 
 Building `sce_qc` takes about 8 minutes. The counts are written to `inst/extdata/sce_qc.rds` before log-normalisation. If time is short, load that file instead of the download.
 
-```{r, eval=FALSE}
-sce_qc <- readRDS(
-  system.file("extdata", "sce_qc.rds", package = "cellNexusWorkshop")
-)
+```{r, include=FALSE, eval=TRUE}
+sce_qc <- readRDS(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "inst", "extdata", "sce_qc.rds"
+))
+sce_qc
 ```
 
-```{r}
+```{r, eval=FALSE}
 sce_qc <- logNormCounts(sce_qc)
 ```
 
@@ -102,7 +101,7 @@ Highly variable genes are selected per sample (`modelGeneVar(block = sample_id)`
 
 CD45 (`PTPRC`, Ensembl `ENSG00000081237`) marks haematopoietic cells independently of the harmonised label. After Harmony, immune cells should sit in the high-CD45 region and epithelial cells in the low-CD45 region.
 
-```{r}
+```{r, eval=FALSE}
 hvgs_qc <- sce_qc |>
   modelGeneVar(block = sce_qc$sample_id) |>
   getTopHVGs(n = 2000)
@@ -119,7 +118,23 @@ sce_qc <- sce_qc |>
 
 cd45_id <- "ENSG00000081237" # Ensemble ID for PTPRC
 
-sce_qc$cd45 <- as.numeric(logcounts(sce_qc)[cd45_id, ])
+sce_cd45 <- sampled_qc |>
+  get_single_cell_experiment(assays = "counts", features = cd45_id) 
+
+sce_qc$cd45 <- NA_real_
+i <- match(colnames(sce_qc), colnames(sce_cd45))
+sce_qc$cd45[!is.na(i)] <- log1p(
+  as.numeric(SummarizedExperiment::assay(sce_cd45, "counts")[1, i[!is.na(i)]])
+)
+
+#base::saveRDS(sce_qc,"./cellNexusWorkshop/inst/extdata/sce_qc_batch_corrected.rds", compress="xz")
+```
+
+```{r, include=FALSE, eval=TRUE}
+sce_qc <- readRDS(file.path(
+  dirname(knitr::current_input(dir = TRUE)),
+  "..", "inst", "extdata", "sce_qc_batch_corrected.rds"
+))
 ```
 
 ```{r cd45-plot}
@@ -186,7 +201,7 @@ seurat_demo
 `tidyseurat` gives that object the same tibble interface you just used on the SingleCellExperiment. The rest of the workshop stays with SingleCellExperiment, because the pseudobulk tools speak that language.
 
 ```{r, include=FALSE}
-rm(hvgs_qc, sampled_qc, samples_qc)
+rm(list = intersect(c("hvgs_qc", "sampled_qc", "samples_qc"), ls()))
 ```
 
 Next: [Compositional analysis](compositional_analysis.html).
