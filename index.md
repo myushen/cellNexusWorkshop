@@ -3,12 +3,8 @@
 ![cellNexus logo](reference/figures/cellnexus_logo.png)![sccomp
 logo](reference/figures/sccomp_logo.png)
 
-Hands-on BiocAsia workshop. From a curated Human Cell Atlas query to
-donor-level composition and expression analysis, in R.
-
-This is the page to follow during the session. Read this page, then the
-articles in order. The session is open to all levels of R experience.
-Each article shows the commands to run.
+Hands-on ABACBS 2026 BiocAsia workshop. From a curated Human Cell Atlas
+query to donor-level composition and expression analysis in R.
 
 ## Instructor names and contact information
 
@@ -17,6 +13,9 @@ Each article shows the commands to run.
   yingnan.gao@adelaide.edu.au](mailto:yingnan.gao@adelaide.edu.au)
 
 ## Syllabus
+
+The workshop has four sections: query the atlas, explore and visualise
+the cells, test cell-type composition, and test gene expression.
 
 Follow these articles in one R session.
 
@@ -32,15 +31,16 @@ Follow these articles in one R session.
 
 ## Package installation
 
-The commands below are for preparing a machine. The workshop targets R
-4.5 or later. `cellNexus` is installed from GitHub. Install CmdStan
+Each participant’s virtual machine already has these packages installed,
+so you do not need to install them during the workshop. The commands
+below are a reference for preparing a new machine. The workshop targets
+R 4.6 or later. `cellNexus` is installed from GitHub. Install CmdStan
 before the first `sccomp` fit so the session does not stop on a
 compiler.
 
 ``` r
 install.packages("BiocManager")
 install.packages("remotes")
-Sys.setenv("R_REMOTES_NO_ERRORS_FROM_WARNINGS" = "true")
 
 install.packages(
   "cmdstanr",
@@ -67,37 +67,48 @@ remotes::install_github("myushen/cellNexusWorkshop")
 The reusable script is
 [`inst/scripts/workshop_respiratory_ageing.R`](https://github.com/myushen/cellNexusWorkshop/blob/main/inst/scripts/workshop_respiratory_ageing.R).
 
-The caches are already saved in the virtual environment, which greatly
-reduces the time spent downloading data and running the analyses during
-the session. Thanks to the workshop organisers.
+The analysis caches are already saved in the virtual environment, so the
+session does not wait on the downloads or the model fits. Thanks to the
+workshop organisers.
 
 ## Workshop description
 
-In this session you will use cellNexus to query and download a curated
-subset of atlas data by tissue, cell type, or disease status, then
-explore and visualise the data with the tidyomics packages. You will
-then run a gene-expression analysis and use sccomp for a compositional
-analysis. By the end of the session you will have an R script that takes
-you from the Human Cell Atlas to these analyses.
+In this session you will follow one respiratory ageing cohort from the
+Human Cell Atlas through to two donor-level analyses. You will use
+`cellNexus` to query and download the cohort, then explore and visualise
+the cells with the `tidyomics` packages. You will use `sccomp` to test
+immune cell-type composition, and then test gene expression in lung
+epithelium. By the end of the session you will have an R script that
+takes you from the atlas query to these analyses.
+
+The cohort comes from nine Human Cell Atlas studies of the respiratory
+system. The questions are whether immune cell-type proportions change
+with age, and whether ageing changes transcription in lung epithelial
+cells. After quality filtering and harmonising donor metadata, younger
+and older donors are compared with `sccomp`, accounting for study.
+Epithelial cells are then integrated with Harmony, clustered into six
+populations, and aggregated to sample-level pseudobulk profiles. DESeq2
+tests one epithelial cluster for age-associated genes, adjusting for
+study and cell count. Those genes form an epithelial ageing signature,
+which is scored on individual cells to show where the transcriptional
+change sits across the epithelium.
 
 ### Pre-requisites
 
 - Basic R experience is preferred but not required. The articles show
   each command.
-- A R 4.6 session with the packages above, and CmdStan installed
+- An R 4.6 session with the packages above, and CmdStan installed
 
 ### Workshop participation
 
-The workshop format is a 90 minute session consisting of hands-on demos,
-exercises and questions. Run the article code in order, in one R
-session. Each exercise has a solution hidden underneath it. The
+The workshop is a 90-minute session of hands-on demos, exercises, and
+questions. Each exercise has a solution hidden underneath it. The
 [Solutions](https://myushen.github.io/cellNexusWorkshop/articles/solutions.md)
 page collects the same answers.
 
 The website shows the code. Run it in R to see your own results. The
-figures on the site were generated ahead of time and saved in the cache,
-so the session does not wait on the download or the fit. Without that
-cache, the full workflow takes about 30 minutes.
+full pipeline takes about 90 minutes, so the computationally heavy steps
+were run ahead of time and are loaded during the workshop.
 
 ### *R* / *Bioconductor* packages used
 
@@ -118,10 +129,10 @@ cache, the full workflow takes about 30 minutes.
 
 ### Workshop goals and objectives
 
-Participants leave with a script that defines a cohort of Human Cell
-Atlas from cellNexus metadata, downloads the matching counts, and fits
-two donor-level models: cell-type composition, and gene expression
-within one epithelial cluster.
+Participants leave with a script that defines a Human Cell Atlas cohort
+from cellNexus metadata, downloads the matching counts, and fits two
+donor-level models: cell-type composition, and gene expression within
+one epithelial cluster.
 
 #### Learning goals
 

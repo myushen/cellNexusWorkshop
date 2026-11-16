@@ -1,27 +1,21 @@
 # 3. Compositional analysis
 
-Source:
-[`vignettes/compositional_analysis.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/compositional_analysis.Rmd)
-
-Continue in the same session. This chapter assumes all variables from
-[Query the
-atlas](https://myushen.github.io/cellNexusWorkshop/articles/query_the_atlas.md)
-and [Explore and
-visualise](https://myushen.github.io/cellNexusWorkshop/articles/explore_and_visualise.md)
-are defined, and fits a donor-level model of immune cell-type
-proportions with `sccomp` (Mangiola et al. 2023).
+Continue from [Explore and
+visualise](https://myushen.github.io/cellNexusWorkshop/articles/explore_and_visualise.md).
+This article answers the question: do immune cell-type proportions
+change with age? Younger and older donors from the same nine respiratory
+studies are compared with `sccomp`, accounting for study (Mangiola et
+al. 2023).
 
 ## Introduction to sccomp
 
-## Why a composition model
+## Keep immune cell types only
 
-This step quantifies age-associated shifts in **cell-type composition**
-on the immune subset of `obs_lung` (`obs_composition`): one donor-level
-simplex per sample over the immune types of the **same nine respiratory
-studies**. Epithelial types are excluded here because their capture is
-driven by dissociation protocol as much as by biology, and including
-them would move the denominator of every immune proportion. **Pseudobulk
-DE** and UMAP validation filter the full table to `epithelial` instead.
+The fit uses the immune subset of `obs_lung` (`obs_composition`): one
+sample-level composition over the immune types. Epithelial types are
+excluded because their capture is driven by dissociation protocol as
+much as by biology, and including them would move the denominator of
+every immune proportion.
 
 ``` r
 obs_composition <- obs_lung |>
@@ -50,9 +44,7 @@ obs_composition |>
     ## 10 treg                          5368
     ## # ℹ 16 more rows
 
-## Fit
-
-discribe what the formula is trying to do:
+## Test whether immune proportions change with age
 
 The formula is `~ age_binary + dataset_id`. `sample_id` is the
 replicate. `cell_type_unified_ensemble` is the group. `dataset_id` is a
@@ -134,15 +126,15 @@ An effect is a change in share. Because shares sum to one, one real
 change produces mirror-image changes in other labels. The label set is
 part of the result: this fit is a shift inside the immune compartment.
 
-## Plot
+## Compare observed and modelled proportions
 
 `age_binary` has two levels, so the summary is a boxplot.
 `remove_unwanted_effects = TRUE` shows proportions after the study term
-has been regressed out, which is the visual counterpart of the model.
-The blue box is the posterior predictive check (Gabry et al. 2019): the
-distribution of data the model would produce. Overlap between the
-observed points and that distribution is evidence that the model
-describes these data.
+has been regressed out, which is the visual counterpart of the
+within-study age contrast. The blue box is the posterior predictive
+check (Gabry et al. 2019): the distribution of data the model would
+produce. Overlap between the observed points and that distribution is
+evidence that the model describes these data.
 
 ``` r
 sccomp_boxplot(

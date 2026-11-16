@@ -1,23 +1,25 @@
 # 2. Explore and visualise
 
-Source:
-[`vignettes/explore_and_visualise.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/explore_and_visualise.Rmd)
-
 Continue in the session from [Query the
 atlas](https://myushen.github.io/cellNexusWorkshop/articles/query_the_atlas.md).
-This chapter assumes `obs_lung` is already defined, and downloads a
-SingleCellExperiment object, checks that immune and epithelial cells
-separate, and shows the same cells as a Seurat object.
+`obs_lung` already holds the respiratory cohort: nine Human Cell Atlas
+studies, with donor age and harmonised cell-type labels.
 
-## Download a SingleCellExperiment
+This article asks whether those cells separate into the immune and
+epithelial compartments the later models use. You download a
+SingleCellExperiment, explore it with the `tidyomics` packages, and
+integrate the studies with Harmony. Immune cells should sit apart from
+epithelial cells on the UMAP, and CD45 should mark that split
+independently of the harmonised label. The same cells are then shown as
+a Seurat object.
+
+## Download counts for the cohort
 
 `get_single_cell_experiment()` reads the count matrices for the cells in
-the queried metadata table and returns one `SingleCellExperiment`.
-
-In this workshop, cells are subsampled within sample, and the number of
-samples is capped, so a few large libraries do not dominate the highly
-variable genes. It caps the download at 12,000 cells, and one sample
-does not exceed 100 cells.
+`obs_lung` and returns one `SingleCellExperiment`. Cells are subsampled
+within sample, and the number of samples is capped, so a few large
+libraries do not dominate the highly variable genes. The download is
+capped at 12,000 cells, and one sample does not exceed 100 cells.
 
 ``` r
 max_cells_qc <- 12000L
@@ -40,9 +42,9 @@ sce_qc <- sampled_qc |>
 sce_qc
 ```
 
-Building `sce_qc` takes about 8 minutes. The counts are written to
-`inst/extdata/sce_qc.rds` before log-normalisation. If time is short,
-load that file instead of the download.
+Building `sce_qc` takes about 10 minutes. The counts are written to
+`inst/extdata/sce_qc.rds` before log-normalisation. Load the file if
+time is short.
 
 ``` r
 sce_qc <- logNormCounts(sce_qc)
@@ -72,13 +74,15 @@ sce_qc |>
     ## 10 cdc                          167
     ## # ℹ 19 more rows
 
-## Integrate studies and colour by CD45
+## Integrate studies and check the split with CD45
 
-Highly variable genes are selected per sample
-(`modelGeneVar(block = sample_id)`), so genes that vary within a donor
-rank above genes that merely differ between libraries (Lun, McCarthy,
-and Marioni 2016). Harmony then removes the study axis from the PCA
-(Korsunsky et al. 2019). The UMAP is drawn from that embedding.
+This section asks whether immune and epithelial cells occupy different
+regions once study is removed from the embedding. Highly variable genes
+are selected per sample (`modelGeneVar(block = sample_id)`), so genes
+that vary within a donor rank above genes that merely differ between
+libraries (Lun, McCarthy, and Marioni 2016). Harmony then removes the
+study axis from the PCA (Korsunsky et al. 2019). The UMAP is drawn from
+that embedding.
 
 CD45 (`PTPRC`, Ensembl `ENSG00000081237`) marks haematopoietic cells
 independently of the harmonised label. After Harmony, immune cells
@@ -126,11 +130,7 @@ sce_qc |>
 
 ![](explore_and_visualise_files/figure-html/cd45-plot-1.png)
 
-> **Exercise 4.** Colour the same UMAP by `dataset_id`. After Harmony,
-> study identity should be mixed within a cell-type region. Islands that
-> follow study boundaries are under-correction. Harmony adjusts the
-> embedding used for the picture. It does not adjust the counts, so the
-> models in the next two articles still include `dataset_id`.
+> **Exercise 4.** Colour the same UMAP by `dataset_id`.
 
 Solution
 
@@ -142,15 +142,9 @@ sce_qc |>
   ggplot2::theme_bw()
 ```
 
-Mixing of colours inside a cell-type region is the pattern you want
-after Harmony. A region painted by a single study is under-correction.
-The expression model still includes `dataset_id`, because the counts
-were not adjusted.
-
 > **Exercise 5.** Using `sce_qc`, count cells per
 > `cell_type_unified_ensemble`. Which of `immune_cell_types` are missing
-> from this subsample, and what does that imply for a composition
-> estimate built from these cells alone?
+> from this subsample?
 
 Solution
 
@@ -161,15 +155,12 @@ sce_qc |>
 setdiff(immune_cell_types, unique(sce_qc$cell_type_unified_ensemble))
 ```
 
-Labels missing from this subsample are absent because of the cap, not
-because they are absent from `obs_lung`. Composition in the next article
-is fit on `obs_lung`, which keeps every cell of every retained sample.
-Fitting `sccomp` on `sce_qc` would estimate the subsample.
+## Open the same table as a Seurat object
 
-## The same cells as a Seurat object
-
-`get_seurat()` reads the count matrices for the cells in the queried
-metadata table and returns a `Seurat` object.
+`get_seurat()` reads the same metadata table into a Seurat object.
+`tidyseurat` gives that object the tibble interface you just used on the
+SingleCellExperiment. The rest of the workshop stays with
+SingleCellExperiment. This demo reads 100 cells from one study.
 
 ``` r
 library(tidyseurat)
@@ -205,10 +196,6 @@ seurat_demo
     ## #   low_confidence_ethnicity <chr>, imputed_ethnicity <chr>, tissue <fct>,
     ## #   self_reported_ethnicity <fct>, cell_type <fct>, assay <fct>, disease <fct>,
     ## #   sex <fct>, age_years <dbl>, age_binary <lgl>, age_bin <fct>, …
-
-`tidyseurat` gives that object the same tibble interface you just used
-on the SingleCellExperiment. The rest of the workshop stays with
-SingleCellExperiment, because the pseudobulk tools speak that language.
 
 Next: [Compositional
 analysis](https://myushen.github.io/cellNexusWorkshop/articles/compositional_analysis.md).
