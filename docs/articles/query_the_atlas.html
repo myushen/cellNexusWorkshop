@@ -65,7 +65,24 @@
 
     
     
-<p>Source: <a href="https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/query_the_atlas.Rmd" class="external-link"><code>vignettes/query_the_atlas.Rmd</code></a></p>
+<div class="section level2">
+<h2 id="human-cell-atlas-data-in-cellnexus">Human Cell Atlas data in cellNexus<a class="anchor" aria-label="anchor" href="#human-cell-atlas-data-in-cellnexus"></a>
+</h2>
+<p>The Human Cell Atlas (HCA) aims to create a comprehensive cellular
+map of the human body. Early work by the Human Cell Atlas consortium
+produced reference maps of healthy tissues, including the lung, the eye,
+and the nervous system. The consortium plans to extend that draft atlas
+to more biological networks.</p>
+<p>CELLxGENE, from the Chan Zuckerberg Initiative, makes these data
+easier to use through interactive visualisation and analysis. Its Census
+API gives programmatic access to a large collection of harmonised
+single-cell datasets, which simplifies extraction and large-scale
+analysis.</p>
+<p>Those datasets still have no shared framework for quality control,
+for putting RNA abundance on one scale, for imputing missing
+annotations, or for harmonising cell-type labels. cellNexus downloads
+single-cell data at scale, and adds those quality-control and
+harmonisation layers on top of the CELLxGENE data.</p>
 <p>This practice takes Human Cell Atlas data from CELLxGENE. Each study
 is a table of measurements at single cell level (one row per cell).
 cellNexus makes that query reusable and fast at the sample level. It
@@ -75,20 +92,27 @@ three labels into one unified cell-type label for every cell. The
 diagram below shows the preprocessing steps, starting from the original
 CELLxGENE data.</p>
 <p><img src="../reference/figures/abstract.png" class="r-plt" alt="" width="420" style="display: block; margin: auto auto auto 0;"></p>
+<p>This article assembles the cohort for both workshop questions. It
+keeps immune and epithelial cells from nine respiratory studies, with
+donor age and Census tissue and disease labels.</p>
+</div>
 <div class="section level2">
-<h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
+<h2 id="load-the-packages">Load the packages<a class="anchor" aria-label="anchor" href="#load-the-packages"></a>
 </h2>
+<p>The query uses <code>cellNexus</code> for the atlas metadata, and
+<code>dplyr</code>, <code>ggplot2</code>, and <code>patchwork</code> to
+filter and plot the cohort.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MangiolaLaboratory/cellNexus" class="external-link">cellNexus</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://patchwork.data-imaginist.com" class="external-link">patchwork</a></span><span class="op">)</span></span></code></pre></div>
-<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata()</a></code> returns a lazy DuckDB table, and accepts
-<code>tidyverse</code> syntax to filter the data.</p>
 </div>
 <div class="section level2">
-<h2 id="quality-control">Quality control<a class="anchor" aria-label="anchor" href="#quality-control"></a>
+<h2 id="read-metadata-and-qualit-control">Read metadata and qualit control<a class="anchor" aria-label="anchor" href="#read-metadata-and-qualit-control"></a>
 </h2>
+<p>Quality control is computed within each sample. A cell has to pass
+all three checks before it enters the cohort.</p>
 <p><img src="../reference/figures/quality-control.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto auto auto 0;"></p>
 <ul>
 <li>An <strong>empty droplet</strong> is liquid captured with almost no
@@ -103,7 +127,7 @@ not exist.</li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">empty_droplet</span> <span class="op">==</span> <span class="cn">FALSE</span>, <span class="va">alive</span> <span class="op">==</span> <span class="cn">TRUE</span>, <span class="va">scDblFinder.class</span> <span class="op">!=</span> <span class="st">"doublet"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">metadata</span></span></code></pre></div>
 <pre><code><span><span class="co">## <span style="color: #949494;"># Source:   SQL [?? x 33]</span></span></span>
@@ -127,21 +151,23 @@ not exist.</li>
 <span><span class="co">## <span style="color: #949494;">#   high_mitochondrion &lt;lgl&gt;, high_ribosome &lt;lgl&gt;, alive &lt;lgl&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   scDblFinder.class &lt;chr&gt;, file_id_cellNexus_single_cell &lt;chr&gt;,</span></span></span>
 <span><span class="co">## <span style="color: #949494;">#   file_id_cellNexus_pseudobulk &lt;chr&gt;, count_upper_bound &lt;dbl&gt;, …</span></span></span></code></pre>
-<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells()</a></code> applies one gate and filters out
-bad quality cells from every sample. This is a filter shortcut, which is
-equivalent to directly applying three filters to each sample:
+<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata()</a></code> returns a lazy DuckDB table, and accepts
+<code>tidyverse</code> syntax to filter the data.</p>
+<p>Alternatively, <code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">cellNexus::keep_quality_cells()</a></code> provides
+a shortcut to filter high quality cells, which is equivalent to directly
+applying three filters to each sample:
 <code>empty_droplet == FALSE, alive == TRUE, scDblFinder.class != "doublet"</code>.</p>
 <p>The same checks are computed for each sample. Detailed technical
 information on the quality-control procedure is available in the <a href="https://cellnexus.org/#quality-control-steps" class="external-link">cellNexus
 quality-control steps</a> page.</p>
 </div>
 <div class="section level2">
-<h2 id="choose-cells-by-cell-type">Choose cells by cell type<a class="anchor" aria-label="anchor" href="#choose-cells-by-cell-type"></a>
+<h2 id="list-the-harmonised-cell-types">List the harmonised cell types<a class="anchor" aria-label="anchor" href="#list-the-harmonised-cell-types"></a>
 </h2>
-<p><code>cell_type_unified_ensemble</code> is the harmonised label
-(multi-reference consensus annotation). <code>age_days</code> and
-<code>imputed_ethnicity</code> are sample-level fields.</p>
-<p>Exploring the harmonised cell types in the atlas.</p>
+<p><code>cell_type_unified_ensemble</code> is one label per cell. It
+combines SingleR annotations from the Blueprint, Monaco, and Azimuth
+references. The table below is every label in the atlas after quality
+control.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -162,8 +188,14 @@ quality-control steps</a> page.</p>
 <span><span class="co">## <span style="color: #BCBCBC;"> 9</span> cd16 mono                 </span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">10</span> cd4 fh em                 </span></span>
 <span><span class="co">## <span style="color: #949494;"># ℹ more rows</span></span></span></code></pre>
-<p>Filtering the atlas by epithelial cells and exploring the imputed
-ethnicities of the donors.</p>
+</div>
+<div class="section level2">
+<h2 id="count-donors-by-imputed-ethnicity">Count donors by imputed ethnicity<a class="anchor" aria-label="anchor" href="#count-donors-by-imputed-ethnicity"></a>
+</h2>
+<p>More than 40% of donors in CELLxGENE have no recorded ethnicity.
+<code>cellNexus</code> supplies an imputed ethnicity for each donor. The
+imputation method is outside this workshop due to time limit. The table
+counts donors who have epithelial cells.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span> <span class="op">==</span> <span class="st">"epithelial"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -185,28 +217,14 @@ ethnicities of the donors.</p>
 <span><span class="co">## <span style="color: #BCBCBC;"> 9</span> Hispanic/Latin American       15</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">10</span> British                       14</span></span>
 <span><span class="co">## <span style="color: #949494;"># ℹ more rows</span></span></span></code></pre>
-<blockquote>
-<p><strong>Exercise 1.</strong> Count cells per
-<code>cell_type_unified_ensemble</code> for donors older than 50 years
-(<code>age_days &gt; 50 * 365</code>). Which labels are rare enough that
-a proportion estimated from 50 cells would be mostly sampling noise?</p>
-</blockquote>
-<details><summary>
-Solution
-</summary><div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/MangiolaLaboratory/cellNexus" class="external-link">cellNexus</a></span><span class="op">)</span></span>
-<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="https://mangiolalaboratory.github.io/cellNexus/reference/keep_quality_cells.html" class="external-link">keep_quality_cells</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">age_days</span> <span class="op">&gt;</span> <span class="fl">50</span> <span class="op">*</span> <span class="fl">365</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
-<p>A label with a few dozen cells across the whole atlas will have a
-very wide composition interval. Drop it from the cell-type list, or
-accept that its estimate is descriptive.</p>
-</details><p>This case study uses nine respiratory reference studies. Each study
-has a unique <code>dataset_id</code>.</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+</div>
+<div class="section level2">
+<h2 id="select-nine-respiratory-studies">Select nine respiratory studies<a class="anchor" aria-label="anchor" href="#select-nine-respiratory-studies"></a>
+</h2>
+<p>These nine Human Cell Atlas dataset identifiers define the
+respiratory cohort. Tissue, disease, and the other Census columns are
+joined onto this list in the next section.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">dataset_ids</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"9f222629-9e39-47d0-b83f-e08d610c7479"</span>,</span>
 <span>  <span class="st">"093d3bfe-6f0f-4ac0-a7a1-829f94d0a49f"</span>,</span>
@@ -220,31 +238,27 @@ has a unique <code>dataset_id</code>.</p>
 <span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2 tabset">
-<h2 class="tabset" id="query-metadata-by-tissue">Query metadata by tissue<a class="anchor" aria-label="anchor" href="#query-metadata-by-tissue"></a>
+<h2 class="tabset" id="join-annotations-from-the-census">Join annotations from the Census<a class="anchor" aria-label="anchor" href="#join-annotations-from-the-census"></a>
 </h2>
-<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata()</a></code> does not carry original CELLxGENE
-annotations such as <code>tissue</code>, <code>disease</code>,
-<code>sex</code>, <code>assay</code>, <code>cell_type</code>, and
-<code>self_reported_ethnicity</code>. Join those columns onto
-<code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata()</a></code>.</p>
-<p>The file below is the CELLxGENE Census <code>obs</code> table for
-snapshot <code>2024-07-01</code>, limited to these nine studies and to
-the columns this join uses. <code>cellxgene.census</code> does not run
-on Windows, so the workshop reads this parquet instead of opening the
-Census.</p>
+<p><code><a href="https://mangiolalaboratory.github.io/cellNexus/reference/get_metadata.html" class="external-link">get_metadata()</a></code> does not carry the original CELLxGENE
+columns <code>tissue</code>, <code>disease</code>, <code>sex</code>,
+<code>assay</code>, <code>cell_type</code>, and
+<code>self_reported_ethnicity</code>. Both tabs join those columns from
+the Census <code>obs</code> table for snapshot <code>2024-07-01</code>,
+limited to these nine studies.</p>
 
 
-<ul class="nav nav-tabs" id="query-metadata-by-tissue" role="tablist">
-<li role="presentation" class="nav-item"><button data-bs-toggle="tab" data-bs-target="#register-the-arrow-table" id="register-the-arrow-table-tab" type="button" role="tab" aria-controls="register-the-arrow-table" aria-selected="true" class="active nav-link">Register the Arrow table</button></li>
-<li role="presentation" class="nav-item"><button data-bs-toggle="tab" data-bs-target="#this-workshop---read-and-join-without-registering" id="this-workshop---read-and-join-without-registering-tab" type="button" role="tab" aria-controls="this-workshop---read-and-join-without-registering" aria-selected="false" class="nav-link">This workshop - Read and join without registering</button></li>
+<ul class="nav nav-tabs" id="join-annotations-from-the-census" role="tablist">
+<li role="presentation" class="nav-item"><button data-bs-toggle="tab" data-bs-target="#register-the-census-table-in-duckdb" id="register-the-census-table-in-duckdb-tab" type="button" role="tab" aria-controls="register-the-census-table-in-duckdb" aria-selected="true" class="active nav-link">Register the Census table in DuckDB</button></li>
+<li role="presentation" class="nav-item"><button data-bs-toggle="tab" data-bs-target="#read-the-workshop-parquet" id="read-the-workshop-parquet-tab" type="button" role="tab" aria-controls="read-the-workshop-parquet" aria-selected="false" class="nav-link">Read the workshop parquet</button></li>
 </ul>
 <div class="tab-content">
-<div class="active  tab-pane" id="register-the-arrow-table" role="tabpanel" aria-labelledby="register-the-arrow-table-tab">
+<div class="active  tab-pane" id="register-the-census-table-in-duckdb" role="tabpanel" aria-labelledby="register-the-census-table-in-duckdb-tab">
 
 <p><code>duckdb_register_arrow()</code> makes the Arrow table visible to
 the same DuckDB connection as <code>metadata</code>, so the join stays
-lazy.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+lazy. This path needs the Census package.</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">census_metadata</span> <span class="op">&lt;-</span> <span class="fu">cellNexus</span><span class="fu">::</span><span class="fu">get_census_metadata</span><span class="op">(</span><span class="st">"2024-07-01"</span><span class="op">)</span></span>
 <span><span class="va">con</span> <span class="op">&lt;-</span> <span class="fu">dbplyr</span><span class="fu">::</span><span class="fu"><a href="https://dbplyr.tidyverse.org/reference/remote_name.html" class="external-link">remote_con</a></span><span class="op">(</span><span class="va">metadata</span><span class="op">)</span></span>
 <span><span class="fu">duckdb</span><span class="fu">::</span><span class="fu"><a href="https://r.duckdb.org/reference/duckdb_register_arrow.html" class="external-link">duckdb_register_arrow</a></span><span class="op">(</span><span class="va">con</span>, <span class="st">"census_metadata"</span>, <span class="va">census_metadata</span><span class="op">)</span></span>
@@ -264,12 +278,12 @@ lazy.</p>
 <span><span class="va">metadata_respiratory</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">tissue</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>
-<div class="tab-pane" id="this-workshop---read-and-join-without-registering" role="tabpanel" aria-labelledby="this-workshop---read-and-join-without-registering-tab">
+<div class="tab-pane" id="read-the-workshop-parquet" role="tabpanel" aria-labelledby="read-the-workshop-parquet-tab">
 
-<p>Since <code>cellxgene.census</code> does not run on Windows, the
-workshop reads this parquet instead of opening the Census. Read the
-parquet as a data frame and join back to the metadata.</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<p><code>cellxgene.census</code> does not run on Windows, so this
+workshop reads the same columns from a parquet file and joins them with
+<code>copy = TRUE</code>.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">census_metadata</span> <span class="op">&lt;-</span> <span class="fu">arrow</span><span class="fu">::</span><span class="fu"><a href="https://arrow.apache.org/docs/r/reference/read_parquet.html" class="external-link">read_parquet</a></span><span class="op">(</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
 <span>    <span class="st">"extdata"</span>,</span>
@@ -313,9 +327,11 @@ parquet as a data frame and join back to the metadata.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="query-metadata-by-disease">Query metadata by disease<a class="anchor" aria-label="anchor" href="#query-metadata-by-disease"></a>
+<h2 id="count-cells-by-disease">Count cells by disease<a class="anchor" aria-label="anchor" href="#count-cells-by-disease"></a>
 </h2>
-<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<p>Disease labels come from the Census join. Count the number of cells
+by disease.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">metadata_respiratory</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">disease</span>, sort <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## <span style="color: #949494;"># Source:     SQL [?? x 2]</span></span></span>
@@ -339,22 +355,39 @@ parquet as a data frame and join back to the metadata.</p>
 <span><span class="co">## <span style="color: #BCBCBC;">14</span> pleomorphic carcinoma                    <span style="text-decoration: underline;">9</span>213</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">15</span> non-specific interstitial pneumonia      <span style="text-decoration: underline;">8</span>037</span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">16</span> pulmonary sarcoidosis                    <span style="text-decoration: underline;">4</span>611</span></span></code></pre>
+<blockquote>
+<p><strong>Exercise 1.</strong> What is the age span of donors with
+European imputed ethnicity who contributed healthy tissue? Report the
+youngest and oldest donor in years. Count each donor once.</p>
+</blockquote>
+<details><summary>
+Solution
+</summary><div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">metadata_respiratory</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span></span>
+<span>    <span class="va">imputed_ethnicity</span> <span class="op">==</span> <span class="st">"European"</span>,</span>
+<span>    <span class="va">disease</span> <span class="op">==</span> <span class="st">"normal"</span></span>
+<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">donor_id</span>, <span class="va">age_days</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarise</a></span><span class="op">(</span></span>
+<span>    n_donors <span class="op">=</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/context.html" class="external-link">n</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>    min_age_years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">min</a></span><span class="op">(</span><span class="va">age_days</span><span class="op">)</span> <span class="op">/</span> <span class="fl">365.25</span>,</span>
+<span>    max_age_years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">age_days</span><span class="op">)</span> <span class="op">/</span> <span class="fl">365.25</span></span>
+<span>  <span class="op">)</span></span></code></pre></div>
+<p><code>disease == "normal"</code> is the healthy label in the Census.
+<code>distinct(donor_id)</code> keeps one row per donor, so a donor with
+many cells does not pull the span. The span is
+<code>max_age_years - min_age_years</code>.</p>
+</details>
 </div>
 <div class="section level2">
 <h2 id="build-the-respiratory-ageing-cohort">Build the respiratory ageing cohort<a class="anchor" aria-label="anchor" href="#build-the-respiratory-ageing-cohort"></a>
 </h2>
 <p>This step keeps immune and epithelial labels, lung and airway
-tissues, and donors from 1 year up to 80 years.</p>
-<p><code><a href="https://dplyr.tidyverse.org/reference/compute.html" class="external-link">dplyr::collect()</a></code> runs the query. <code>dataset_id</code>
-is rewritten with underscores because a hyphenated UUID is not a legal
-name in a model formula. <code>age_years</code>,
+tissues, and donors from 1 year up to 80 years. <code>age_years</code>,
 <code>age_binary</code>, and <code>age_bin</code> are derived here so
 the composition model and the expression model use the same donors.
-Samples with fewer than 50 cells are dropped, and duplicate
-<code>observation_joinid</code> rows are removed. Every cell of every
-retained sample is kept. <code>sccomp</code> conditions on each sample’s
-total, and the expression model carries library size as a covariate, so
-equal-size subsampling would throw away precision.</p>
+Samples with fewer than 50 cells are dropped.</p>
 <div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">respiratory_tissues</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
 <span>  <span class="st">"lung"</span>, <span class="st">"lung parenchyma"</span>, <span class="st">"alveolus of lung"</span>, <span class="st">"bronchus"</span>,</span>
@@ -401,16 +434,6 @@ equal-size subsampling would throw away precision.</p>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="va">dataset_id</span>, <span class="va">sample_id</span>, <span class="va">observation_joinid</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">observation_joinid</span>, .keep_all <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">age_scaled</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">age_years</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
-<span>    age_years_scaled_centered <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/scale.html" class="external-link">scale</a></span><span class="op">(</span><span class="va">age_years</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span></span>
-<span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">age_years_scaled_centered</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">obs_lung</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate-joins.html" class="external-link">left_join</a></span><span class="op">(</span><span class="va">age_scaled</span>, by <span class="op">=</span> <span class="st">"sample_id"</span><span class="op">)</span></span>
-<span></span>
 <span><span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span>, name <span class="op">=</span> <span class="st">"n_cells"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/arrange.html" class="external-link">arrange</a></span><span class="op">(</span><span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/desc.html" class="external-link">desc</a></span><span class="op">(</span><span class="va">n_cells</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
@@ -429,19 +452,16 @@ equal-size subsampling would throw away precision.</p>
 <span><span class="co">## <span style="color: #BCBCBC;">10</span> mast                         <span style="text-decoration: underline;">13</span>578</span></span>
 <span><span class="co">## <span style="color: #949494;"># ℹ 19 more rows</span></span></span></code></pre>
 <p><code>age_binary</code> is <code>TRUE</code> for donors older than 50
-years. <code>age_bin</code> is the same split, labelled for plots. One
-encoding means the composition model and the expression model contrast
-the same donors. The boundary is a modelling choice: report it, and
-check that both sides are populated.</p>
+years. <code>age_bin</code> is the same split, labelled for plots.</p>
 </div>
 <div class="section level2">
-<h2 id="inspect-the-cohort-before-modelling">Inspect the cohort before modelling<a class="anchor" aria-label="anchor" href="#inspect-the-cohort-before-modelling"></a>
+<h2 id="inspect-age-and-cell-type-before-modelling">Inspect age and cell type before modelling<a class="anchor" aria-label="anchor" href="#inspect-age-and-cell-type-before-modelling"></a>
 </h2>
-<p>Look at the age histogram and the cell-type bar chart before fitting
-a model. Both age classes should contain donors. Ages clumped into two
-distant groups will make a continuous age slope rest on whichever
-studies sit at the extremes. A cell type with only a handful of cells
-will have an uninformative composition interval.</p>
+<p>The histogram is donor age, counted once per sample. The bar chart is
+cells per harmonised label. Both age classes should contain samples.
+Ages clumped into two distant groups will make a continuous age slope
+rest on whichever studies sit at the extremes. A cell type with only a
+handful of cells will have an uninformative composition interval.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">p_age</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">age_years</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -474,20 +494,21 @@ model.</p>
 </details><blockquote>
 <p><strong>Exercise 3.</strong> Cross-tabulate distinct samples by
 <code>dataset_id</code> and <code>age_binary</code>. Which studies
-contain donors of both age classes? A study that contains only one class
-cannot separate age from study, and both models below include
-<code>dataset_id</code>.</p>
+contain samples of both age classes?</p>
 </blockquote>
 <details><summary>
 Solution
 </summary><div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
+<code class="sourceCode R"><span><span class="va">age_by_study</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/distinct.html" class="external-link">distinct</a></span><span class="op">(</span><span class="va">sample_id</span>, <span class="va">dataset_id</span>, <span class="va">age_binary</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">dataset_id</span>, <span class="va">age_binary</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">age_binary</span>, values_from <span class="op">=</span> <span class="va">n</span>, values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
-<p>A study with a zero in either age class does not identify an age
-effect on its own. The fixed <code>dataset_id</code> term uses the
-studies that contain both classes.</p>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>age_class <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">age_binary</span>, <span class="st">"older"</span>, <span class="st">"younger"</span><span class="op">)</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/count.html" class="external-link">count</a></span><span class="op">(</span><span class="va">dataset_id</span>, <span class="va">age_class</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">tidyr</span><span class="fu">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/pivot_wider.html" class="external-link">pivot_wider</a></span><span class="op">(</span>names_from <span class="op">=</span> <span class="va">age_class</span>, values_from <span class="op">=</span> <span class="va">n</span>, values_fill <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">age_by_study</span></span>
+<span></span>
+<span><span class="va">age_by_study</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">younger</span> <span class="op">&gt;</span> <span class="fl">0</span>, <span class="va">older</span> <span class="op">&gt;</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
 </details><p>Next: <a href="explore_and_visualise.html">Explore and
 visualise</a>.</p>
 </div>

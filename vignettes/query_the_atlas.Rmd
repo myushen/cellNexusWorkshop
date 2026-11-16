@@ -25,9 +25,13 @@ library(ggplot2)
 library(patchwork)
 ```
 
-Source:
-[`vignettes/query_the_atlas.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/query_the_atlas.Rmd)
+## Human Cell Atlas data in cellNexus
 
+The Human Cell Atlas (HCA) aims to create a comprehensive cellular map of the human body. Early work by the Human Cell Atlas consortium produced reference maps of healthy tissues, including the lung, the eye, and the nervous system. The consortium plans to extend that draft atlas to more biological networks.
+
+CELLxGENE, from the Chan Zuckerberg Initiative, makes these data easier to use through interactive visualisation and analysis. Its Census API gives programmatic access to a large collection of harmonised single-cell datasets, which simplifies extraction and large-scale analysis.
+
+Those datasets still have no shared framework for quality control, for putting RNA abundance on one scale, for imputing missing annotations, or for harmonising cell-type labels. cellNexus downloads single-cell data at scale, and adds those quality-control and harmonisation layers on top of the CELLxGENE data.
 
 This practice takes Human Cell Atlas data from CELLxGENE. Each study is a table of measurements at single cell level (one row per cell). cellNexus makes that query reusable and fast at the sample level. It also adds three cell-type labels with SingleR, using the Blueprint, Monaco, and Azimuth references. A harmonisation step then combines those three labels into one unified cell-type label for every cell. The diagram below shows the preprocessing steps, starting from the original CELLxGENE data.
 
@@ -35,7 +39,11 @@ This practice takes Human Cell Atlas data from CELLxGENE. Each study is a table 
 knitr::include_graphics("../man/figures/abstract.png")
 ```
 
-## Setup
+This article assembles the cohort for both workshop questions. It keeps immune and epithelial cells from nine respiratory studies, with donor age and Census tissue and disease labels.
+
+## Load the packages
+
+The query uses `cellNexus` for the atlas metadata, and `dplyr`, `ggplot2`, and `patchwork` to filter and plot the cohort.
 
 ```{r}
 library(cellNexus)
@@ -44,10 +52,10 @@ library(ggplot2)
 library(patchwork)
 ```
 
-`get_metadata()` returns a lazy DuckDB table, and accepts `tidyverse` syntax to filter the data.
+## Read metadata and qualit control
 
+Quality control is computed within each sample. A cell has to pass all three checks before it enters the cohort.
 
-## Quality control
 ```{r quality-control-figure, echo=FALSE, eval=TRUE, out.width="100%", fig.align="left"}
 knitr::include_graphics("../man/figures/quality-control.png")
 ```
@@ -56,60 +64,46 @@ knitr::include_graphics("../man/figures/quality-control.png")
 * A **dead cell** is detected by a high mitochondrial percentage.
 * A **doublet** is two cells captured together. Their measurements are mixed, so the row can look like a cell type that does not exist.
 
-```{r}
+```{r, cache=FALSE}
 metadata <- get_metadata() |>
-  keep_quality_cells()
+  dplyr::filter(empty_droplet == FALSE, alive == TRUE, scDblFinder.class != "doublet")
 
 metadata
 ```
 
-`keep_quality_cells()` applies one gate and filters out bad quality cells from every sample. This is a filter shortcut, which is equivalent to directly applying three filters to each sample: `empty_droplet == FALSE, alive == TRUE, scDblFinder.class != "doublet"`.
+`get_metadata()` returns a lazy DuckDB table, and accepts `tidyverse` syntax to filter the data.
+
+Alternatively, `cellNexus::keep_quality_cells()` provides a shortcut to filter high quality cells, which is equivalent to directly applying three filters to each sample: `empty_droplet == FALSE, alive == TRUE, scDblFinder.class != "doublet"`.
 
 The same checks are computed for each sample. Detailed technical information on the quality-control procedure is available in the [cellNexus quality-control steps](https://cellnexus.org/#quality-control-steps) page.
 
 
-## Choose cells by cell type
+## List the harmonised cell types
 
-`cell_type_unified_ensemble` is the harmonised label (multi-reference consensus annotation). `age_days` and `imputed_ethnicity` are sample-level fields.
+`cell_type_unified_ensemble` is one label per cell. It combines SingleR annotations from the Blueprint, Monaco, and Azimuth references. The table below is every label in the atlas after quality control.
 
-Exploring the harmonised cell types in the atlas.
 
-```{r}
+```{r, cache=FALSE}
 metadata |>
   dplyr::distinct(cell_type_unified_ensemble) |>
   dplyr::arrange(cell_type_unified_ensemble)
 ```
 
-Filtering the atlas by epithelial cells and exploring the imputed ethnicities of the donors.
 
-```{r}
+## Count donors by imputed ethnicity
+
+More than 40% of donors in CELLxGENE have no recorded ethnicity. `cellNexus` supplies an imputed ethnicity for each donor. The imputation method is outside this workshop due to time limit. The table counts donors who have epithelial cells.
+
+```{r, cache=FALSE}
 metadata |>
   dplyr::filter(cell_type_unified_ensemble == "epithelial") |>
   dplyr::distinct(donor_id, imputed_ethnicity) |>
   dplyr::count(imputed_ethnicity, sort = TRUE)
 ```
 
-> **Exercise 1.** Count cells per `cell_type_unified_ensemble` for donors older than 50 years (`age_days > 50 * 365`). Which labels are rare enough that a proportion estimated from 50 cells would be mostly sampling noise?
+## Select nine respiratory studies
 
-<details>
-<summary>Solution</summary>
-
-```r
-library(cellNexus)
-library(dplyr)
-
-get_metadata() |>
-  keep_quality_cells() |>
-  dplyr::filter(age_days > 50 * 365) |>
-  dplyr::count(cell_type_unified_ensemble, sort = TRUE)
-```
-
-A label with a few dozen cells across the whole atlas will have a very wide composition interval. Drop it from the cell-type list, or accept that its estimate is descriptive.
-
-</details>
-
-
-This case study uses nine respiratory reference studies. Each study has a unique `dataset_id`.
+These nine Human Cell Atlas dataset identifiers define the respiratory cohort. Tissue, disease, and the other Census columns are joined onto this list in the next section.
 
 ```{r}
 dataset_ids <- c(
@@ -125,15 +119,13 @@ dataset_ids <- c(
 )
 ```
 
-## Query metadata by tissue {.tabset}
+## Join annotations from the Census {.tabset}
 
-`get_metadata()` does not carry original CELLxGENE annotations such as `tissue`, `disease`, `sex`, `assay`, `cell_type`, and `self_reported_ethnicity`. Join those columns onto `get_metadata()`.
+`get_metadata()` does not carry the original CELLxGENE columns `tissue`, `disease`, `sex`, `assay`, `cell_type`, and `self_reported_ethnicity`. Both tabs join those columns from the Census `obs` table for snapshot `2024-07-01`, limited to these nine studies.
 
-The file below is the CELLxGENE Census `obs` table for snapshot `2024-07-01`, limited to these nine studies and to the columns this join uses. `cellxgene.census` does not run on Windows, so the workshop reads this parquet instead of opening the Census.
+### Register the Census table in DuckDB
 
-### Register the Arrow table
-
-`duckdb_register_arrow()` makes the Arrow table visible to the same DuckDB connection as `metadata`, so the join stays lazy.
+`duckdb_register_arrow()` makes the Arrow table visible to the same DuckDB connection as `metadata`, so the join stays lazy. This path needs the Census package.
 
 ```{r, eval=FALSE}
 census_metadata <- cellNexus::get_census_metadata("2024-07-01")
@@ -156,11 +148,11 @@ metadata_respiratory |>
   dplyr::count(tissue, sort = TRUE)
 ```
 
-### This workshop - Read and join without registering
+### Read the workshop parquet
 
-Since `cellxgene.census` does not run on Windows, the workshop reads this parquet instead of opening the Census. Read the parquet as a data frame and join back to the metadata.
+`cellxgene.census` does not run on Windows, so this workshop reads the same columns from a parquet file and joins them with `copy = TRUE`.
 
-```{r}
+```{r, cache=FALSE}
 census_metadata <- arrow::read_parquet(
   system.file(
     "extdata",
@@ -187,20 +179,43 @@ metadata_respiratory |>
 ```
 
 
-## Query metadata by disease
+## Count cells by disease
 
-```{r}
+Disease labels come from the Census join. Count the number of cells by disease.
+
+```{r, cache=FALSE}
 metadata_respiratory |>
   dplyr::count(disease, sort = TRUE)
 ```
 
+> **Exercise 1.** What is the age span of donors with European imputed ethnicity who contributed healthy tissue? Report the youngest and oldest donor in years. Count each donor once.
+
+<details>
+<summary>Solution</summary>
+
+```r
+metadata_respiratory |>
+  dplyr::filter(
+    imputed_ethnicity == "European",
+    disease == "normal"
+  ) |>
+  dplyr::distinct(donor_id, age_days) |>
+  dplyr::summarise(
+    n_donors = dplyr::n(),
+    min_age_years = min(age_days) / 365.25,
+    max_age_years = max(age_days) / 365.25
+  )
+```
+
+`disease == "normal"` is the healthy label in the Census. `distinct(donor_id)` keeps one row per donor, so a donor with many cells does not pull the span. The span is `max_age_years - min_age_years`.
+
+</details>
+
 ## Build the respiratory ageing cohort
 
-This step keeps immune and epithelial labels, lung and airway tissues, and donors from 1 year up to 80 years.
+This step keeps immune and epithelial labels, lung and airway tissues, and donors from 1 year up to 80 years. `age_years`, `age_binary`, and `age_bin` are derived here so the composition model and the expression model use the same donors. Samples with fewer than 50 cells are dropped.
 
-`dplyr::collect()` runs the query. `dataset_id` is rewritten with underscores because a hyphenated UUID is not a legal name in a model formula. `age_years`, `age_binary`, and `age_bin` are derived here so the composition model and the expression model use the same donors. Samples with fewer than 50 cells are dropped, and duplicate `observation_joinid` rows are removed. Every cell of every retained sample is kept. `sccomp` conditions on each sample's total, and the expression model carries library size as a covariate, so equal-size subsampling would throw away precision.
-
-```{r}
+```{r, cache=FALSE}
 respiratory_tissues <- c(
   "lung", "lung parenchyma", "alveolus of lung", "bronchus",
   "respiratory airway", "pleura", "pleural effusion",
@@ -246,16 +261,6 @@ obs_lung <- obs_lung |>
   dplyr::arrange(dataset_id, sample_id, observation_joinid) |>
   dplyr::distinct(observation_joinid, .keep_all = TRUE)
 
-age_scaled <- obs_lung |>
-  dplyr::distinct(sample_id, age_years) |>
-  dplyr::mutate(
-    age_years_scaled_centered = as.numeric(scale(age_years)[, 1])
-  ) |>
-  dplyr::select(sample_id, age_years_scaled_centered)
-
-obs_lung <- obs_lung |>
-  dplyr::left_join(age_scaled, by = "sample_id")
-
 obs_lung |>
   dplyr::count(cell_type_unified_ensemble, name = "n_cells") |>
   dplyr::arrange(dplyr::desc(n_cells))
@@ -270,11 +275,11 @@ dir.create(extdata_dir, recursive = TRUE, showWarnings = FALSE)
 saveRDS(obs_lung, file.path(extdata_dir, "obs_lung.rds"), compress = "xz")
 ```
 
-`age_binary` is `TRUE` for donors older than 50 years. `age_bin` is the same split, labelled for plots. One encoding means the composition model and the expression model contrast the same donors. The boundary is a modelling choice: report it, and check that both sides are populated.
+`age_binary` is `TRUE` for donors older than 50 years. `age_bin` is the same split, labelled for plots.
 
-## Inspect the cohort before modelling
+## Inspect age and cell type before modelling
 
-Look at the age histogram and the cell-type bar chart before fitting a model. Both age classes should contain donors. Ages clumped into two distant groups will make a continuous age slope rest on whichever studies sit at the extremes. A cell type with only a handful of cells will have an uninformative composition interval.
+The histogram is donor age, counted once per sample. The bar chart is cells per harmonised label. Both age classes should contain samples. Ages clumped into two distant groups will make a continuous age slope rest on whichever studies sit at the extremes. A cell type with only a handful of cells will have an uninformative composition interval.
 
 ```{r, include=FALSE, eval=TRUE}
 obs_lung <- readRDS(
@@ -315,19 +320,23 @@ Both bins should contain donors. A bin with a handful of samples cannot support 
 
 </details>
 
-> **Exercise 3.** Cross-tabulate distinct samples by `dataset_id` and `age_binary`. Which studies contain donors of both age classes? A study that contains only one class cannot separate age from study, and both models below include `dataset_id`.
+> **Exercise 3.** Cross-tabulate distinct samples by `dataset_id` and `age_binary`. Which studies contain samples of both age classes?
 
 <details>
 <summary>Solution</summary>
 
 ```r
-obs_lung |>
+age_by_study <- obs_lung |>
   dplyr::distinct(sample_id, dataset_id, age_binary) |>
-  dplyr::count(dataset_id, age_binary) |>
-  tidyr::pivot_wider(names_from = age_binary, values_from = n, values_fill = 0)
-```
+  dplyr::mutate(age_class = ifelse(age_binary, "older", "younger")) |>
+  dplyr::count(dataset_id, age_class) |>
+  tidyr::pivot_wider(names_from = age_class, values_from = n, values_fill = 0)
 
-A study with a zero in either age class does not identify an age effect on its own. The fixed `dataset_id` term uses the studies that contain both classes.
+age_by_study
+
+age_by_study |>
+  dplyr::filter(younger > 0, older > 0)
+```
 
 </details>
 

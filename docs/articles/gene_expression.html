@@ -65,11 +65,17 @@
 
     
     
-<p>Source: <a href="https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/gene_expression.Rmd" class="external-link"><code>vignettes/gene_expression.Rmd</code></a></p>
-<p>Continue in the same session. This block integrates epithelial cells,
-aggregates sample-by-cluster pseudobulk, and tests donor-level age
-effects with DESeq2 through <a href="https://github.com/stemangiola/tidybulk" class="external-link">tidybulk</a> <span class="citation">(Love, Huber, and Anders 2014)</span>. The last section
-scores the resulting signature back onto single cells using <a href="https://github.com/DavisLaboratory/singscore" class="external-link">singscore</a> <span class="citation">(Foroutan et al. 2018)</span>.</p>
+<p>Continue from <a href="compositional_analysis.html">Compositional
+analysis</a>. This article answers the question: does ageing change
+transcription in lung epithelial cells?</p>
+<p>Epithelial cells are integrated with Harmony, clustered into six
+populations, and aggregated to sample-level pseudobulk profiles. DESeq2,
+through <a href="https://github.com/stemangiola/tidybulk" class="external-link">tidybulk</a>,
+tests one epithelial cluster for age-associated genes, adjusting for
+study and cell count <span class="citation">(Love, Huber, and Anders
+2014)</span>. Those genes form an epithelial ageing signature, which is
+scored on individual cells with <a href="https://github.com/DavisLaboratory/singscore" class="external-link">singscore</a> to
+show where the transcriptional change sits across the epithelium <span class="citation">(Foroutan et al. 2018)</span>.</p>
 <p>The reusable script for everything you have run is installed with the
 package:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -78,22 +84,21 @@ package:</p>
 <span>  package <span class="op">=</span> <span class="st">"cellNexusWorkshop"</span></span>
 <span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
 <div class="section level2">
-<h2 id="why-gene-expression">Why gene expression<a class="anchor" aria-label="anchor" href="#why-gene-expression"></a>
+<h2 id="split-the-broad-epithelial-label">Split the broad epithelial label<a class="anchor" aria-label="anchor" href="#split-the-broad-epithelial-label"></a>
 </h2>
 <p><code>epithelial</code> is one broad label. Ciliated, secretory,
 basal, and alveolar cells all sit inside it, so a single expression
-average mixes cell types that are not the same. The aim of this block is
-to split those cells into smaller clusters, and to use marker genes to
+average mixes cell types that are not the same. The test therefore
+splits those cells into smaller clusters, and uses marker genes to
 decide whether that split is a real set of smaller cell types. A cluster
 is identified by the genes that mark it.</p>
 </div>
 <div class="section level2">
-<h2 id="integrate-and-cluster-the-epithelial-compartment">Integrate and cluster the epithelial compartment<a class="anchor" aria-label="anchor" href="#integrate-and-cluster-the-epithelial-compartment"></a>
+<h2 id="integrate-epithelial-cells-and-define-six-clusters">Integrate epithelial cells and define six clusters<a class="anchor" aria-label="anchor" href="#integrate-epithelial-cells-and-define-six-clusters"></a>
 </h2>
-<p>We integrate the epithelial cells and cut the embedding into six
-clusters, and test age inside the cluster that can support the
-design.</p>
-<p>The example subset to 12000 epithelial cells. <a href="https://github.com/immunogenomics/harmony" class="external-link">Harmony</a> here is for
+<p>Epithelial cells are integrated with Harmony and cut into six
+clusters. The age test uses the cluster that can support the design.
+This example uses 12,000 epithelial cells. <a href="https://github.com/immunogenomics/harmony" class="external-link">Harmony</a> here is for
 clustering and the UMAP. The counts still carry study effects, and the
 model below still includes <code>dataset_id</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -146,7 +151,8 @@ model below still includes <code>dataset_id</code>.</p>
 <div class="section level2">
 <h2 id="aggregate-sample-by-cluster-pseudobulk">Aggregate sample-by-cluster pseudobulk<a class="anchor" aria-label="anchor" href="#aggregate-sample-by-cluster-pseudobulk"></a>
 </h2>
-<p><code>aggregateAcrossCells.se()</code> sums raw counts within each
+<p>Each later test treats the sample as the replicate.
+<code>aggregateAcrossCells.se()</code> sums raw counts within each
 sample and cluster. The column <code>ncells</code> is the number of
 cells that entered each pseudobulk. Profiles with fewer than 10 cells
 are dropped. <code>log_cell_count</code> is a scaled depth covariate so
@@ -172,16 +178,21 @@ profiles built from different numbers of cells are comparable.</p>
 <span><span class="va">pb_se</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="choose-a-cluster-and-fit-the-age-model">Choose a cluster and fit the age model<a class="anchor" aria-label="anchor" href="#choose-a-cluster-and-fit-the-age-model"></a>
+<h2 id="test-one-cluster-for-age-associated-genes">Test one cluster for age-associated genes<a class="anchor" aria-label="anchor" href="#test-one-cluster-for-age-associated-genes"></a>
 </h2>
+<p>This section asks which genes change expression with age inside one
+epithelial population.</p>
+<div class="section level3">
+<h3 id="choose-a-cluster-that-can-support-the-age-term">Choose a cluster that can support the age term<a class="anchor" aria-label="anchor" href="#choose-a-cluster-that-can-support-the-age-term"></a>
+</h3>
 <p>k-means labels change with the seed and the cell cap, so the cluster
 for the age model is chosen from a screen. A cluster qualifies when both
 age classes have enough cells and samples, neither class is a small
 fraction of the cluster, at least two studies contribute both age
-classes, and the design matrix has full rank. Full rank is the check
-that age is not the same thing as study: if every study in a cluster
-supplies only one age class, the age coefficient cannot be separated
-from <code>dataset_id</code>. Eligible clusters are sorted by how many
+classes, and the design matrix has full rank. Full rank means age can be
+separated from study: if every study in a cluster supplies only one age
+class, the age coefficient cannot be separated from
+<code>dataset_id</code>. Eligible clusters are sorted by how many
 studies span both ages, then by the number of pseudobulk profiles. The
 first row is the cluster that is tested. The thresholds here are 150
 cells and 5 samples in each class. If the screen has no eligible row,
@@ -278,7 +289,12 @@ Solution
 are sorted by <code>n_datasets_spanning_age</code>, then by the number
 of pseudobulk profiles. Quote <code>n_datasets_spanning_age</code> for
 that row. A value of 1 means the age term rests on a single study.</p>
-</details><p>The contrast is old versus young: positive log fold changes are
+</details>
+</div>
+<div class="section level3">
+<h3 id="test-old-against-young-with-deseq2">Test old against young with DESeq2<a class="anchor" aria-label="anchor" href="#test-old-against-young-with-deseq2"></a>
+</h3>
+<p>The contrast is old versus young: positive log fold changes are
 higher in donors over 50. DESeq2 tests against a log2 fold change of 1,
 so the p-value asks whether the change exceeds a doubling. Say that when
 you report the p-values. <code>sfType = "poscounts"</code> estimates
@@ -319,9 +335,15 @@ one age class survives.</p>
 <span>    method <span class="op">=</span> <span class="st">"limma_remove_batch_effect"</span></span>
 <span>  <span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="co">## Coefficients not estimable: dataset_ide04daea4_4412_45b5_989e_76a9be070a89</span></span></code></pre>
-<p>Marker boxplots use tidybulk <code>adjust_abundance()</code>
-(<code>limma_remove_batch_effect</code>) on the selected cluster’s
-pseudobulks.</p>
+</div>
+<div class="section level3">
+<h3 id="plot-the-genes-in-the-ageing-signature">Plot the genes in the ageing signature<a class="anchor" aria-label="anchor" href="#plot-the-genes-in-the-ageing-signature"></a>
+</h3>
+<p>The signature uses a nominal p-value cutoff, capped at 25 genes in
+each direction. It is a gene set for scoring. A claim about an
+individual gene needs the false-discovery column as well. Report both.
+The boxplots show those genes after <code>adjust_abundance()</code> has
+removed study and cell-count effects.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">de_results</span> <span class="op">&lt;-</span> <span class="fu">rowData</span><span class="op">(</span><span class="va">pb_se</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">tibble</span><span class="fu">::</span><span class="fu"><a href="https://tibble.tidyverse.org/reference/as_tibble.html" class="external-link">as_tibble</a></span><span class="op">(</span>rownames <span class="op">=</span> <span class="st">".feature"</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -357,10 +379,6 @@ pseudobulks.</p>
 <span><span class="co">## <span style="color: #BCBCBC;">6</span> ENSG00000125999 TRUE        459.             2.02 0.561  3.60   3.44<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> 1     </span></span>
 <span><span class="co">## <span style="color: #BCBCBC;">7</span> ENSG00000161055 TRUE        850.             2.25 0.728  3.09   4.33<span style="color: #949494;">e</span><span style="color: #BB0000;">-2</span> 1     </span></span>
 <span><span class="co">## <span style="color: #949494;"># ℹ 1 more variable: gene_symbol &lt;chr&gt;</span></span></span></code></pre>
-<p>The signature uses a nominal p-value cutoff, capped at 25 genes in
-each direction. It is a gene set for scoring. A claim about an
-individual gene needs the false-discovery column as well. Report
-both.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">marker_genes</span> <span class="op">&lt;-</span> <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/bind_rows.html" class="external-link">bind_rows</a></span><span class="op">(</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="va">signature_up</span>, direction <span class="op">=</span> <span class="st">"up"</span><span class="op">)</span>,</span>
@@ -397,12 +415,15 @@ higher in the <code>50-79</code> bin. If it sits lower, the factor
 levels and the contrast disagree.</p>
 </details>
 </div>
+</div>
 <div class="section level2">
-<h2 id="score-the-signature-on-single-cells">Score the signature on single cells<a class="anchor" aria-label="anchor" href="#score-the-signature-on-single-cells"></a>
+<h2 id="score-the-ageing-signature-on-single-cells">Score the ageing signature on single cells<a class="anchor" aria-label="anchor" href="#score-the-ageing-signature-on-single-cells"></a>
 </h2>
-<p>Next we score the signature back onto single cells using <a href="https://github.com/DavisLaboratory/singscore" class="external-link">singscore</a> <span class="citation">(Foroutan et al. 2018)</span>, which uses rank averages
-to score the signature. Zero is a cell with no net signature, and a
-depleted cell stays below zero.</p>
+<p><a href="https://github.com/DavisLaboratory/singscore" class="external-link">singscore</a>
+scores each cell by the average rank of the signature genes <span class="citation">(Foroutan et al. 2018)</span>. The score asks where the
+age-associated transcriptional change sits inside the chosen cluster.
+Zero is a cell with no net signature, and a depleted cell stays below
+zero.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://davislaboratory.github.io/singscore" class="external-link">singscore</a></span><span class="op">)</span></span>
 <span></span>

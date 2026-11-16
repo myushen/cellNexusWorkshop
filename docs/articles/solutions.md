@@ -13,21 +13,25 @@ expressions print.
 
 ## Exercise 1
 
-Cells per harmonised label for donors older than 50 years.
+Age span of donors with European imputed ethnicity and healthy tissue.
+Healthy tissue is `disease == "normal"`. Count each donor once.
 
 ``` r
-library(cellNexus)
-library(dplyr)
-
-get_metadata() |>
-  keep_quality_cells() |>
-  dplyr::filter(age_days > 50 * 365) |>
-  dplyr::count(cell_type_unified_ensemble, sort = TRUE)
+metadata_respiratory |>
+  dplyr::filter(
+    imputed_ethnicity == "European",
+    disease == "normal"
+  ) |>
+  dplyr::distinct(donor_id, age_days) |>
+  dplyr::summarise(
+    n_donors = dplyr::n(),
+    min_age_years = min(age_days) / 365.25,
+    max_age_years = max(age_days) / 365.25
+  )
 ```
 
-A label with a few dozen cells across the whole atlas will have a very
-wide composition interval. Drop it from the cell-type list, or accept
-that its estimate is descriptive.
+`distinct(donor_id)` keeps one row per donor, so a donor with many cells
+does not pull the span. The span is `max_age_years - min_age_years`.
 
 ## Exercise 2
 
@@ -42,16 +46,21 @@ support the age term once `dataset_id` is in the model.
 
 ## Exercise 3
 
-``` r
-obs_lung |>
-  dplyr::distinct(sample_id, dataset_id, age_binary) |>
-  dplyr::count(dataset_id, age_binary) |>
-  tidyr::pivot_wider(names_from = age_binary, values_from = n, values_fill = 0)
-```
+Cross-tabulate distinct samples by `dataset_id` and `age_binary`, then
+keep the studies with samples in both age classes.
 
-A study with a zero in either age class does not identify an age effect
-on its own. The fixed `dataset_id` term uses the studies that contain
-both classes.
+``` r
+age_by_study <- obs_lung |>
+  dplyr::distinct(sample_id, dataset_id, age_binary) |>
+  dplyr::mutate(age_class = ifelse(age_binary, "older", "younger")) |>
+  dplyr::count(dataset_id, age_class) |>
+  tidyr::pivot_wider(names_from = age_class, values_from = n, values_fill = 0)
+
+age_by_study
+
+age_by_study |>
+  dplyr::filter(younger > 0, older > 0)
+```
 
 ## Exercise 4
 
@@ -63,11 +72,6 @@ sce_qc |>
   ggplot2::theme_bw()
 ```
 
-Mixing of colours inside a cell-type region is the pattern you want
-after Harmony. A region painted by a single study is under-correction.
-The expression model still includes `dataset_id`, because the counts
-were not adjusted.
-
 ## Exercise 5
 
 ``` r
@@ -76,11 +80,6 @@ sce_qc |>
 
 setdiff(immune_cell_types, unique(sce_qc$cell_type_unified_ensemble))
 ```
-
-Labels missing from this subsample are absent because of the cap, not
-because they are absent from `obs_lung`. Composition in the next article
-is fit on `obs_lung`, which keeps every cell of every retained sample.
-Fitting `sccomp` on `sce_qc` would estimate the subsample.
 
 ## Exercise 6
 

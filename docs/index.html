@@ -57,8 +57,7 @@
 </h1></div>
 <p style="text-align: left;">
 <img src="reference/figures/cellnexus_logo.png" alt="cellNexus logo" style="height: 100px; width: auto;"><img src="reference/figures/sccomp_logo.png" alt="sccomp logo" style="height: 100px; width: auto;"></p>
-<p>Hands-on BiocAsia workshop. From a curated Human Cell Atlas query to donor-level composition and expression analysis, in R.</p>
-<p>This is the page to follow during the session. Read this page, then the articles in order. The session is open to all levels of R experience. Each article shows the commands to run.</p>
+<p>Hands-on ABACBS 2026 BiocAsia workshop. From a curated Human Cell Atlas query to donor-level composition and expression analysis in R.</p>
 <div class="section level2">
 <h2 id="instructor-names-and-contact-information">Instructor names and contact information<a class="anchor" aria-label="anchor" href="#instructor-names-and-contact-information"></a>
 </h2>
@@ -72,6 +71,7 @@
 <div class="section level2">
 <h2 id="syllabus">Syllabus<a class="anchor" aria-label="anchor" href="#syllabus"></a>
 </h2>
+<p>The workshop has four sections: query the atlas, explore and visualise the cells, test cell-type composition, and test gene expression.</p>
 <p>Follow these articles in one R session.</p>
 <ul>
 <li><a href="articles/query_the_atlas.html">Query the atlas</a></li>
@@ -84,11 +84,10 @@
 <div class="section level2">
 <h2 id="package-installation">Package installation<a class="anchor" aria-label="anchor" href="#package-installation"></a>
 </h2>
-<p>The commands below are for preparing a machine. The workshop targets R 4.5 or later. <code>cellNexus</code> is installed from GitHub. Install CmdStan before the first <code>sccomp</code> fit so the session does not stop on a compiler.</p>
+<p>Each participant’s virtual machine already has these packages installed, so you do not need to install them during the workshop. The commands below are a reference for preparing a new machine. The workshop targets R 4.6 or later. <code>cellNexus</code> is installed from GitHub. Install CmdStan before the first <code>sccomp</code> fit so the session does not stop on a compiler.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"BiocManager"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"remotes"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span><span class="st">"R_REMOTES_NO_ERRORS_FROM_WARNINGS"</span> <span class="op">=</span> <span class="st">"true"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span></span>
 <span>  <span class="st">"cmdstanr"</span>,</span>
@@ -111,25 +110,26 @@
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"MangiolaLaboratory/sccomp"</span><span class="op">)</span></span>
 <span><span class="fu">remotes</span><span class="fu">::</span><span class="fu"><a href="https://remotes.r-lib.org/reference/install_github.html" class="external-link">install_github</a></span><span class="op">(</span><span class="st">"myushen/cellNexusWorkshop"</span><span class="op">)</span></span></code></pre></div>
 <p>The reusable script is <a href="https://github.com/myushen/cellNexusWorkshop/blob/main/inst/scripts/workshop_respiratory_ageing.R" class="external-link"><code>inst/scripts/workshop_respiratory_ageing.R</code></a>.</p>
-<p>The caches are already saved in the virtual environment, which greatly reduces the time spent downloading data and running the analyses during the session. Thanks to the workshop organisers.</p>
+<p>The analysis caches are already saved in the virtual environment, so the session does not wait on the downloads or the model fits. Thanks to the workshop organisers.</p>
 </div>
 <div class="section level2">
 <h2 id="workshop-description">Workshop description<a class="anchor" aria-label="anchor" href="#workshop-description"></a>
 </h2>
-<p>In this session you will use cellNexus to query and download a curated subset of atlas data by tissue, cell type, or disease status, then explore and visualise the data with the tidyomics packages. You will then run a gene-expression analysis and use sccomp for a compositional analysis. By the end of the session you will have an R script that takes you from the Human Cell Atlas to these analyses.</p>
+<p>In this session you will follow one respiratory ageing cohort from the Human Cell Atlas through to two donor-level analyses. You will use <code>cellNexus</code> to query and download the cohort, then explore and visualise the cells with the <code>tidyomics</code> packages. You will use <code>sccomp</code> to test immune cell-type composition, and then test gene expression in lung epithelium. By the end of the session you will have an R script that takes you from the atlas query to these analyses.</p>
+<p>The cohort comes from nine Human Cell Atlas studies of the respiratory system. The questions are whether immune cell-type proportions change with age, and whether ageing changes transcription in lung epithelial cells. After quality filtering and harmonising donor metadata, younger and older donors are compared with <code>sccomp</code>, accounting for study. Epithelial cells are then integrated with Harmony, clustered into six populations, and aggregated to sample-level pseudobulk profiles. DESeq2 tests one epithelial cluster for age-associated genes, adjusting for study and cell count. Those genes form an epithelial ageing signature, which is scored on individual cells to show where the transcriptional change sits across the epithelium.</p>
 <div class="section level3">
 <h3 id="pre-requisites">Pre-requisites<a class="anchor" aria-label="anchor" href="#pre-requisites"></a>
 </h3>
 <ul>
 <li>Basic R experience is preferred but not required. The articles show each command.</li>
-<li>A R 4.6 session with the packages above, and CmdStan installed</li>
+<li>An R 4.6 session with the packages above, and CmdStan installed</li>
 </ul>
 </div>
 <div class="section level3">
 <h3 id="workshop-participation">Workshop participation<a class="anchor" aria-label="anchor" href="#workshop-participation"></a>
 </h3>
-<p>The workshop format is a 90 minute session consisting of hands-on demos, exercises and questions. Run the article code in order, in one R session. Each exercise has a solution hidden underneath it. The <a href="articles/solutions.html">Solutions</a> page collects the same answers.</p>
-<p>The website shows the code. Run it in R to see your own results. The figures on the site were generated ahead of time and saved in the cache, so the session does not wait on the download or the fit. Without that cache, the full workflow takes about 30 minutes.</p>
+<p>The workshop is a 90-minute session of hands-on demos, exercises, and questions. Each exercise has a solution hidden underneath it. The <a href="articles/solutions.html">Solutions</a> page collects the same answers.</p>
+<p>The website shows the code. Run it in R to see your own results. The full pipeline takes about 90 minutes, so the computationally heavy steps were run ahead of time and are loaded during the workshop.</p>
 </div>
 <div class="section level3">
 <h3 id="r--bioconductor-packages-used">
@@ -155,7 +155,7 @@
 <div class="section level3">
 <h3 id="workshop-goals-and-objectives">Workshop goals and objectives<a class="anchor" aria-label="anchor" href="#workshop-goals-and-objectives"></a>
 </h3>
-<p>Participants leave with a script that defines a cohort of Human Cell Atlas from cellNexus metadata, downloads the matching counts, and fits two donor-level models: cell-type composition, and gene expression within one epithelial cluster.</p>
+<p>Participants leave with a script that defines a Human Cell Atlas cohort from cellNexus metadata, downloads the matching counts, and fits two donor-level models: cell-type composition, and gene expression within one epithelial cluster.</p>
 <div class="section level4">
 <h4 id="learning-goals">Learning goals<a class="anchor" aria-label="anchor" href="#learning-goals"></a>
 </h4>

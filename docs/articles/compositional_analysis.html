@@ -65,12 +65,11 @@
 
     
     
-<p>Source: <a href="https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/compositional_analysis.Rmd" class="external-link"><code>vignettes/compositional_analysis.Rmd</code></a></p>
-<p>Continue in the same session. This chapter assumes all variables from
-<a href="query_the_atlas.html">Query the atlas</a> and <a href="explore_and_visualise.html">Explore and visualise</a> are defined,
-and fits a donor-level model of immune cell-type proportions with
-<code>sccomp</code> <span class="citation">(Mangiola et al.
-2023)</span>.</p>
+<p>Continue from <a href="explore_and_visualise.html">Explore and
+visualise</a>. This article answers the question: do immune cell-type
+proportions change with age? Younger and older donors from the same nine
+respiratory studies are compared with <code>sccomp</code>, accounting
+for study <span class="citation">(Mangiola et al. 2023)</span>.</p>
 <div class="section level2">
 <h2 id="introduction-to-sccomp">Introduction to sccomp<a class="anchor" aria-label="anchor" href="#introduction-to-sccomp"></a>
 </h2>
@@ -78,17 +77,13 @@ and fits a donor-level model of immune cell-type proportions with
 </iframe>
 </div>
 <div class="section level2">
-<h2 id="why-a-composition-model">Why a composition model<a class="anchor" aria-label="anchor" href="#why-a-composition-model"></a>
+<h2 id="keep-immune-cell-types-only">Keep immune cell types only<a class="anchor" aria-label="anchor" href="#keep-immune-cell-types-only"></a>
 </h2>
-<p>This step quantifies age-associated shifts in <strong>cell-type
-composition</strong> on the immune subset of <code>obs_lung</code>
-(<code>obs_composition</code>): one donor-level simplex per sample over
-the immune types of the <strong>same nine respiratory studies</strong>.
-Epithelial types are excluded here because their capture is driven by
-dissociation protocol as much as by biology, and including them would
-move the denominator of every immune proportion. <strong>Pseudobulk
-DE</strong> and UMAP validation filter the full table to
-<code>epithelial</code> instead.</p>
+<p>The fit uses the immune subset of <code>obs_lung</code>
+(<code>obs_composition</code>): one sample-level composition over the
+immune types. Epithelial types are excluded because their capture is
+driven by dissociation protocol as much as by biology, and including
+them would move the denominator of every immune proportion.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">obs_composition</span> <span class="op">&lt;-</span> <span class="va">obs_lung</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">cell_type_unified_ensemble</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">immune_cell_types</span><span class="op">)</span> <span class="op">|&gt;</span></span>
@@ -115,9 +110,8 @@ DE</strong> and UMAP validation filter the full table to
 <span><span class="co">## <span style="color: #949494;"># ℹ 16 more rows</span></span></span></code></pre>
 </div>
 <div class="section level2">
-<h2 id="fit">Fit<a class="anchor" aria-label="anchor" href="#fit"></a>
+<h2 id="test-whether-immune-proportions-change-with-age">Test whether immune proportions change with age<a class="anchor" aria-label="anchor" href="#test-whether-immune-proportions-change-with-age"></a>
 </h2>
-<p>discribe what the formula is trying to do:</p>
 <p>The formula is <code>~ age_binary + dataset_id</code>.
 <code>sample_id</code> is the replicate.
 <code>cell_type_unified_ensemble</code> is the group.
@@ -194,14 +188,16 @@ part of the result: this fit is a shift inside the immune
 compartment.</p>
 </div>
 <div class="section level2">
-<h2 id="plot">Plot<a class="anchor" aria-label="anchor" href="#plot"></a>
+<h2 id="compare-observed-and-modelled-proportions">Compare observed and modelled proportions<a class="anchor" aria-label="anchor" href="#compare-observed-and-modelled-proportions"></a>
 </h2>
 <p><code>age_binary</code> has two levels, so the summary is a boxplot.
 <code>remove_unwanted_effects = TRUE</code> shows proportions after the
 study term has been regressed out, which is the visual counterpart of
-the model. The blue box is the posterior predictive check <span class="citation">(Gabry et al. 2019)</span>: the distribution of data
-the model would produce. Overlap between the observed points and that
-distribution is evidence that the model describes these data.</p>
+the within-study age contrast. The blue box is the posterior predictive
+check <span class="citation">(Gabry et al. 2019)</span>: the
+distribution of data the model would produce. Overlap between the
+observed points and that distribution is evidence that the model
+describes these data.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu">sccomp_boxplot</span><span class="op">(</span></span>
 <span>  <span class="va">sccomp_res</span>,</span>

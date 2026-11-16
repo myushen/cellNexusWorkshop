@@ -1,16 +1,19 @@
 # 4. Gene expression
 
-Source:
-[`vignettes/gene_expression.Rmd`](https://github.com/myushen/cellNexusWorkshop/blob/HEAD/vignettes/gene_expression.Rmd)
+Continue from [Compositional
+analysis](https://myushen.github.io/cellNexusWorkshop/articles/compositional_analysis.md).
+This article answers the question: does ageing change transcription in
+lung epithelial cells?
 
-Continue in the same session. This block integrates epithelial cells,
-aggregates sample-by-cluster pseudobulk, and tests donor-level age
-effects with DESeq2 through
-[tidybulk](https://github.com/stemangiola/tidybulk) (Love, Huber, and
-Anders 2014). The last section scores the resulting signature back onto
-single cells using
-[singscore](https://github.com/DavisLaboratory/singscore) (Foroutan et
-al. 2018).
+Epithelial cells are integrated with Harmony, clustered into six
+populations, and aggregated to sample-level pseudobulk profiles. DESeq2,
+through [tidybulk](https://github.com/stemangiola/tidybulk), tests one
+epithelial cluster for age-associated genes, adjusting for study and
+cell count (Love, Huber, and Anders 2014). Those genes form an
+epithelial ageing signature, which is scored on individual cells with
+[singscore](https://github.com/DavisLaboratory/singscore) to show where
+the transcriptional change sits across the epithelium (Foroutan et al.
+2018).
 
 The reusable script for everything you have run is installed with the
 package:
@@ -22,21 +25,20 @@ file.edit(system.file(
 ))
 ```
 
-## Why gene expression
+## Split the broad epithelial label
 
 `epithelial` is one broad label. Ciliated, secretory, basal, and
 alveolar cells all sit inside it, so a single expression average mixes
-cell types that are not the same. The aim of this block is to split
-those cells into smaller clusters, and to use marker genes to decide
-whether that split is a real set of smaller cell types. A cluster is
-identified by the genes that mark it.
+cell types that are not the same. The test therefore splits those cells
+into smaller clusters, and uses marker genes to decide whether that
+split is a real set of smaller cell types. A cluster is identified by
+the genes that mark it.
 
-## Integrate and cluster the epithelial compartment
+## Integrate epithelial cells and define six clusters
 
-We integrate the epithelial cells and cut the embedding into six
-clusters, and test age inside the cluster that can support the design.
-
-The example subset to 12000 epithelial cells.
+Epithelial cells are integrated with Harmony and cut into six clusters.
+The age test uses the cluster that can support the design. This example
+uses 12,000 epithelial cells.
 [Harmony](https://github.com/immunogenomics/harmony) here is for
 clustering and the UMAP. The counts still carry study effects, and the
 model below still includes `dataset_id`.
@@ -94,6 +96,7 @@ sce_epi |>
 
 ## Aggregate sample-by-cluster pseudobulk
 
+Each later test treats the sample as the replicate.
 `aggregateAcrossCells.se()` sums raw counts within each sample and
 cluster. The column `ncells` is the number of cells that entered each
 pseudobulk. Profiles with fewer than 10 cells are dropped.
@@ -121,19 +124,24 @@ pb_se <- pb_se |>
 pb_se
 ```
 
-## Choose a cluster and fit the age model
+## Test one cluster for age-associated genes
+
+This section asks which genes change expression with age inside one
+epithelial population.
+
+### Choose a cluster that can support the age term
 
 k-means labels change with the seed and the cell cap, so the cluster for
 the age model is chosen from a screen. A cluster qualifies when both age
 classes have enough cells and samples, neither class is a small fraction
 of the cluster, at least two studies contribute both age classes, and
-the design matrix has full rank. Full rank is the check that age is not
-the same thing as study: if every study in a cluster supplies only one
-age class, the age coefficient cannot be separated from `dataset_id`.
-Eligible clusters are sorted by how many studies span both ages, then by
-the number of pseudobulk profiles. The first row is the cluster that is
-tested. The thresholds here are 150 cells and 5 samples in each class.
-If the screen has no eligible row, lower a threshold and rebuild it.
+the design matrix has full rank. Full rank means age can be separated
+from study: if every study in a cluster supplies only one age class, the
+age coefficient cannot be separated from `dataset_id`. Eligible clusters
+are sorted by how many studies span both ages, then by the number of
+pseudobulk profiles. The first row is the cluster that is tested. The
+thresholds here are 150 cells and 5 samples in each class. If the screen
+has no eligible row, lower a threshold and rebuild it.
 
 ``` r
 de_design <- ~ age_binary + log_cell_count + dataset_id
@@ -232,6 +240,8 @@ are sorted by `n_datasets_spanning_age`, then by the number of
 pseudobulk profiles. Quote `n_datasets_spanning_age` for that row. A
 value of 1 means the age term rests on a single study.
 
+### Test old against young with DESeq2
+
 The contrast is old versus young: positive log fold changes are higher
 in donors over 50. DESeq2 tests against a log2 fold change of 1, so the
 p-value asks whether the change exceeds a doubling. Say that when you
@@ -278,8 +288,13 @@ pb_se <- pb_se |>
 
     ## Coefficients not estimable: dataset_ide04daea4_4412_45b5_989e_76a9be070a89
 
-Marker boxplots use tidybulk `adjust_abundance()`
-(`limma_remove_batch_effect`) on the selected cluster’s pseudobulks.
+### Plot the genes in the ageing signature
+
+The signature uses a nominal p-value cutoff, capped at 25 genes in each
+direction. It is a gene set for scoring. A claim about an individual
+gene needs the false-discovery column as well. Report both. The boxplots
+show those genes after `adjust_abundance()` has removed study and
+cell-count effects.
 
 ``` r
 de_results <- rowData(pb_se) |>
@@ -319,10 +334,6 @@ signature_up
     ## 7 ENSG00000161055 TRUE        850.             2.25 0.728  3.09   4.33e-2 1     
     ## # ℹ 1 more variable: gene_symbol <chr>
 
-The signature uses a nominal p-value cutoff, capped at 25 genes in each
-direction. It is a gene set for scoring. A claim about an individual
-gene needs the false-discovery column as well. Report both.
-
 ``` r
 marker_genes <- dplyr::bind_rows(
   dplyr::mutate(signature_up, direction = "up"),
@@ -361,12 +372,13 @@ Solution
 for a gene in `signature_up` should sit higher in the `50-79` bin. If it
 sits lower, the factor levels and the contrast disagree.
 
-## Score the signature on single cells
+## Score the ageing signature on single cells
 
-Next we score the signature back onto single cells using
-[singscore](https://github.com/DavisLaboratory/singscore) (Foroutan et
-al. 2018), which uses rank averages to score the signature. Zero is a
-cell with no net signature, and a depleted cell stays below zero.
+[singscore](https://github.com/DavisLaboratory/singscore) scores each
+cell by the average rank of the signature genes (Foroutan et al. 2018).
+The score asks where the age-associated transcriptional change sits
+inside the chosen cluster. Zero is a cell with no net signature, and a
+depleted cell stays below zero.
 
 ``` r
 library(singscore)
