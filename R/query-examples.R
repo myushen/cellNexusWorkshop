@@ -71,8 +71,7 @@ metadata |>
 lung_cohort <- metadata |>
   filter(tissue == "lung", disease == "normal",
          self_reported_ethnicity == "European",
-         assay == "10x 3' v2") |>
-  count(disease)
+         assay == "10x 3' v2")
 
 # View annotations
 lung_cohort |> glimpse()
