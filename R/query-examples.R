@@ -30,7 +30,7 @@ metadata <- metadata |>
       select(observation_joinid, dataset_id,
              tissue, self_reported_ethnicity,
              cell_type, assay, disease, sex),
-    by = c("dataset_id", "observation_joinid"
+    by = c("dataset_id", "observation_joinid")
     )
     
 # Join annotations. For windows user
